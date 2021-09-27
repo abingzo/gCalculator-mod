@@ -30,10 +30,11 @@ func WriteStdOut() error {
 	tmp := make([]byte,0)
 	_,err := base.StdOut.Read(tmp)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	_, err = base.OsStdOut.Write(tmp)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
