@@ -36,8 +36,8 @@ func TestMath(t *testing.T) {
 	z2 := f1.Add(&f1,&f2)
 	t.Log(z2.String())
 	// 浮点数与整数相加
-	f1.FromString("3")
-	f2.FromString("0.33")
+	f1.FromString("37332686")
+	f2.FromString("726578685.76786875779")
 	z2 = f1.Add(&f1,&f2)
 	t.Log(z2.String())
 	t.Log(f1.String())

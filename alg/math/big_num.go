@@ -177,6 +177,30 @@ func checkString(p []byte) string {
 	}
 }
 
+// 绝对值
+func (b *BigNum) Abs() *BigNum {
+	c := b.copy(b)
+	c.data[0] = int8(PN)
+	return c
+}
+
+// 拷贝
+func (b *BigNum) copy(p *BigNum) *BigNum {
+	return &BigNum{
+		_type:     p._type,
+		data: func() []int8 {
+			dst := make([]int8,len(p.data))
+			copy(dst,p.data)
+			return dst
+		}(),
+		pointData: func() []int8 {
+			dst := make([]int8,len(p.pointData))
+			copy(dst,p.pointData)
+			return dst
+		}(),
+	}
+}
+
 // 加法递归运算结果
 // 栈填充的内容统一为int
 func (b *BigNum) Add(a, c *BigNum) *BigNum {
@@ -321,10 +345,10 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 	return element
 }
 
-//// 减法
-//func (b *BigNum) Sub(a,c *BigNum) *BigNum {
-//
-//}
+// 减法
+func (b *BigNum) Sub(a,c *BigNum) *BigNum {
+
+}
 
 // 三元表达式的简单实现
 func hit(bl bool, a, b interface{}) interface{} {
