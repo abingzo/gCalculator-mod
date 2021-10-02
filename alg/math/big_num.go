@@ -292,7 +292,9 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 	// 判断符号位
 	// 正负相加
 	if a.data[0] == int8(PN) && c.data[0] == int8(NN) {
-		return b.Sub(a,c)
+		c2 := b.copy(c)
+		c2.data[0] = int8(PN)
+		return b.Sub(a,c2)
 	} else if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
 		// 负负相加
 		a2 := b.copy(a)
@@ -305,7 +307,9 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 		return nResult
 	} else if a.data[0] == int8(NN) && c.data[0] == int8(PN) {
 		// 负正相加
-		return b.Sub(c,a)
+		a2 := b.copy(a)
+		a2.data[0] = int8(PN)
+		return b.Sub(c,a2)
 	}
 	// 不同的类型采用不同的策略
 	// 正正相加
@@ -463,6 +467,8 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 	}
 	// 存储整数计算结果的栈
 	integerResult := alg.NewStack()
+	// 存储小数计算结果的栈
+	pointResult := alg.NewStack()
 	// 正整数减法
 	if a._type == c._type && a._type == INTERGER && a.data[0] == c.data[0] && a.data[0] == int8(PN) {
 		// 找出最大的数
@@ -508,32 +514,50 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 	} else if a._type == c._type && a._type == FLOAT && a.data[0] == c.data[0] && a.data[0] == int8(PN) {
 		// 正小数减法
 		// 分解步骤
+		//TODO:不依赖加法接口
 		/*
+			强制被减数大于减数
 			小数部分的运算 --> 整数部分的运算
 			运算之后的整数 + 运算之后的小数
 		*/
-		a2 := b.copy(a)
-		c2 := b.copy(c)
-		iResult := b.Sub(&BigNum{_type: INTERGER,data: a2.data},&BigNum{_type: INTERGER,data: c2.data})
-		// 补上符号位
-		// 小数对齐
-		maxFloatLen := a2
-		if len(c2.pointData) > len(a2.pointData) {
-			maxFloatLen = c2
+		// 找出最大的数，以便可以借位
+		max := b.Max(a,c)
+		min := b.Min(a,c)
+		// 被减数
+		minuend := b.copy(max)
+		sub := min
+		// 小数要对齐长度
+		if len(minuend.pointData) > len(sub.pointData) {
+			sub.pointData = append(sub.pointData,make([]int8,len(minuend.pointData) - len(sub.pointData))...)
+		} else if len(minuend.pointData) < len(sub.pointData) {
+			minuend.pointData = append(minuend.pointData,make([]int8,len(sub.pointData) - len(minuend.pointData))...)
 		}
-		fResult := b.Sub(&BigNum{
-			_type:     INTERGER,
-			data:      append([]int8{int8(PN)},append(a2.pointData,make([]int8,len(maxFloatLen.pointData) - len(a2.pointData))...)...),
-		},&BigNum{
-			_type:     INTERGER,
-			data:      append([]int8{int8(PN)},append(c2.pointData,make([]int8,len(maxFloatLen.pointData) - len(c2.pointData))...)...),
-		})
-		// 恢复为浮点数
-		fResult.pointData = append(fResult.pointData,fResult.data[1:]...)
-		fResult.data = append(fResult.data[:1],0)
-		fResult._type = FLOAT
-		// add
-		return b.Add(iResult,fResult)
+		// 遍历相减
+		for i := len(minuend.pointData) - 1; i >= 0 ; i-- {
+			if r := minuend.pointData[i] - sub.pointData[i]; r < 0 {
+				// 借位,小数位没位置则向整数位借
+				if i - 1 < 0 {
+					minuend.data[len(minuend.data) - 1] -= 1
+				} else {
+					minuend.pointData[i - 1] -= 1
+				}
+				pointResult.Push(int(r + 10))
+			} else {
+				pointResult.Push(int(r))
+			}
+		}
+		// 整数相减
+		iResult := b.Sub(&BigNum{_type: INTERGER,data: minuend.data},&BigNum{_type: INTERGER,data: min.data})
+		// 根据最小数字确认符号位
+		if a == min {
+			iResult.data[0] = int8(NN)
+		} else {
+			iResult.data[0] = int8(PN)
+		}
+		// 将结果压栈
+		for i := len(iResult.data) - 1 ; i >=0 ; i-- {
+			integerResult.Push(int(iResult.data[i]))
+		}
 	} else if a._type != c._type {
 		// 类型不相等时
 		// 对齐对应的浮点类型
@@ -551,12 +575,19 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 	}
 	// 序列化
 	// 拼接成BigNum类型
-	bytes := make([]byte, 0)
-	for !integerResult.IsEmpty() {
-		r := integerResult.Pop().(int)
-		bytes = append(bytes, reverseTable[int8(r)])
+	element := &BigNum{}
+	if !integerResult.IsEmpty() {
+		element._type = INTERGER
 	}
-	var x BigNum
-	return x.FromString(string(bytes))
+	if !pointResult.IsEmpty() {
+		element._type = FLOAT
+	}
+	for !integerResult.IsEmpty() {
+		element.data = append(element.data,int8(integerResult.Pop().(int)))
+	}
+	for !pointResult.IsEmpty() {
+		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+	}
+	return element
 }
 
