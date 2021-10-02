@@ -46,7 +46,13 @@ func TestMath(t *testing.T) {
 	t.Log("负负相加:" + z2.String())
 	// 负正相加
 	z2 = f1.Add(f1.FromString("-20.7456356"),f2.FromString("40.54363846"))
-	t.Log("负负相加:" + z2.String())
+	t.Log("负正相加:" + z2.String())
+	// 正负相加
+	z2 = f1.Add(f1.FromString("7954.874297492"),f2.FromString("-987593275.5827592"))
+	t.Log("正负相加:" + z2.String())
+	// 精度小数相加
+	z2 = f1.Add(f1.FromString("0.30000004"),f2.FromString("0.3004400005"))
+	t.Log("精度小数相加:" + z2.String())
 	// 大整数减法
 	z3 := i1.Sub(&i1,&i2)
 	t.Log(z3.String())

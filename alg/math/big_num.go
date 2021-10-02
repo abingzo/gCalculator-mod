@@ -501,8 +501,8 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 				integerResult.Push(r)
 			}
 		}
-		// 去除首位零及补充符号位
-		for !integerResult.IsEmpty() && integerResult.Peek().(int) == 0 {
+		// 长度大于1时去除首位零及补充符号位
+		for !integerResult.IsEmpty() && integerResult.Peek().(int) == 0 && integerResult.Len() > 1 {
 			integerResult.Pop()
 		}
 		// 根据被减数和减数大小关系补充符号位

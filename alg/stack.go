@@ -23,6 +23,10 @@ func (s *Stack) IsEmpty() bool {
 	return s.list.Len() == 0
 }
 
+func (s *Stack) Len() int {
+	return s.list.Len()
+}
+
 func (s *Stack) Peek() interface{} {
 	return s.list.Back().Value
 }
