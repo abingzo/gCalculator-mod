@@ -10,9 +10,9 @@ const (
 	FLOAT numType = iota
 	INTERGER
 	// 正数
-	PN int = 10
+	PN int = 11
 	// 负数
-	NN int = 11
+	NN int = 10
 )
 
 var table = map[byte]int8{
@@ -177,6 +177,79 @@ func checkString(p []byte) string {
 	}
 }
 
+// 三元表达式的简单实现
+func hit(bl bool, a, b interface{}) interface{} {
+	if bl {
+		return a
+	} else {
+		return b
+	}
+}
+
+// 比较得出最大的数
+// a,c 为nil时返回nil
+func (b *BigNum) Max(a,c *BigNum) *BigNum {
+	if a == nil && c == nil {
+		return nil
+	} else if a != nil && c == nil {
+		return a
+	} else if c != nil && a == nil {
+		return c
+	}
+	if len(a.data) > len(c.data) {
+		return a
+	}  else if len(a.data) < len(c.data){
+		return c
+	} else if len(a.data) == len(c.data) {
+		// 长度相同的情况下
+		// 从大到小遍历
+		for i := 0; i < len(a.data);i++ {
+			if a.data[i] > c.data[i] {
+				return a
+			} else if a.data[i] < c.data[i] {
+				return c
+			}
+		}
+		// 如果整数位相等且任意一数为小数
+		if c._type == FLOAT {
+			return c
+		} else if a._type == FLOAT {
+			return a
+		} else if a._type == c._type && a._type == INTERGER{
+			// 都为整数且相等则返回第一个数
+			return a
+		}
+		// 整数位相等且都为小数则比较小数位
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		toData := func(p *BigNum) {
+			p._type = INTERGER
+			dst := []int8{int8(PN)}
+			p.data = append(dst,p.pointData...)
+		}
+		toData(a2)
+		toData(c2)
+		// 递归比较
+		tmp := b.Max(a2,c2)
+		if tmp == a2 {
+			return a
+		} else {
+			return c
+		}
+	}
+	return nil
+}
+
+// 比较得出最小的数
+func (b *BigNum) Min(a,c *BigNum) *BigNum {
+	tmp := b.Max(a,c)
+	if tmp == a {
+		return c
+	} else {
+		return a
+	}
+}
+
 // 绝对值
 func (b *BigNum) Abs() *BigNum {
 	c := b.copy(b)
@@ -194,6 +267,9 @@ func (b *BigNum) copy(p *BigNum) *BigNum {
 			return dst
 		}(),
 		pointData: func() []int8 {
+			if p.pointData == nil {
+				return nil
+			}
 			dst := make([]int8,len(p.pointData))
 			copy(dst,p.pointData)
 			return dst
@@ -203,6 +279,7 @@ func (b *BigNum) copy(p *BigNum) *BigNum {
 
 // 加法递归运算结果
 // 栈填充的内容统一为int
+// TODO:解决与负数相加的BUG
 func (b *BigNum) Add(a, c *BigNum) *BigNum {
 	// 用于存储整数加法溢出的符号位
 	tmpFlowI := alg.NewStack()
@@ -212,7 +289,26 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 	integerResult := alg.NewStack()
 	// 存储小数计算结果的栈
 	pointResult := alg.NewStack()
+	// 判断符号位
+	// 正负相加
+	if a.data[0] == int8(PN) && c.data[0] == int8(NN) {
+		return b.Sub(a,c)
+	} else if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
+		// 负负相加
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		// 调整符号位
+		a2.data[0] = int8(PN)
+		c2.data[0] = int8(PN)
+		nResult := b.Add(a2,c2)
+		nResult.data[0] = int8(NN)
+		return nResult
+	} else if a.data[0] == int8(NN) && c.data[0] == int8(PN) {
+		// 负正相加
+		return b.Sub(c,a)
+	}
 	// 不同的类型采用不同的策略
+	// 正正相加
 	loop:
 	if a._type == c._type && a._type == INTERGER {
 		// 找出最大的数对其计算
@@ -347,14 +443,120 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 
 // 减法
 func (b *BigNum) Sub(a,c *BigNum) *BigNum {
-
-}
-
-// 三元表达式的简单实现
-func hit(bl bool, a, b interface{}) interface{} {
-	if bl {
-		return a
-	} else {
-		return b
+	// 判断符号位，以便优化
+	// 负正相减，变换符号位
+	if a.data[0] != c.data[0] && a.data[0] == int8(NN) {
+		a.data[0] = int8(PN)
+		defer func(p *BigNum) {
+			p.data[0] = int8(NN)
+		}(a)
+		tmp := b.Add(a,c)
+		tmp.data[0] = int8(NN)
+		return tmp
+	} else if a.data[0] != c.data[0] && a.data[0] == int8(PN) {
+		// 正减负
+		c.data[0] = int8(PN)
+		defer func(p *BigNum) {
+			p.data[0] = int8(NN)
+		}(c)
+		return b.Add(a,c)
 	}
+	// 存储整数计算结果的栈
+	integerResult := alg.NewStack()
+	// 正整数减法
+	if a._type == c._type && a._type == INTERGER && a.data[0] == c.data[0] && a.data[0] == int8(PN) {
+		// 找出最大的数
+		max := b.Max(a,c)
+		var min *BigNum
+		if max == c {
+			min = a
+		} else {
+			min = c
+		}
+		minuend := b.copy(max)
+		for i := 1; i < len(min.data); i++{
+			// 小于被减数则借位
+			if r := minuend.data[len(minuend.data) - i]; r < min.data[len(min.data) - i] {
+				minuend.data[len(minuend.data) - (i+1)] -= 1
+				r += 10
+				integerResult.Push(int(r - min.data[len(min.data) - i]))
+			}  else {
+				integerResult.Push(int(r - min.data[len(min.data) - i]))
+			}
+		}
+		// 长度不相等则补上剩余的数字
+		// 忽略符号位
+		// 扫描到小于0的数字要借位
+		for i := len(minuend.data) - len(min.data); i > 0; i-- {
+			if r := int(minuend.data[i]); r < 0 {
+				minuend.data[i - 1] -= 1
+				integerResult.Push(r + 10)
+			} else {
+				integerResult.Push(r)
+			}
+		}
+		// 去除首位零及补充符号位
+		for !integerResult.IsEmpty() && integerResult.Peek().(int) == 0 {
+			integerResult.Pop()
+		}
+		// 根据被减数和减数大小关系补充符号位
+		if min ==  a {
+			integerResult.Push(NN)
+		} else {
+			integerResult.Push(PN)
+		}
+	} else if a._type == c._type && a._type == FLOAT && a.data[0] == c.data[0] && a.data[0] == int8(PN) {
+		// 正小数减法
+		// 分解步骤
+		/*
+			小数部分的运算 --> 整数部分的运算
+			运算之后的整数 + 运算之后的小数
+		*/
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		iResult := b.Sub(&BigNum{_type: INTERGER,data: a2.data},&BigNum{_type: INTERGER,data: c2.data})
+		// 补上符号位
+		// 小数对齐
+		maxFloatLen := a2
+		if len(c2.pointData) > len(a2.pointData) {
+			maxFloatLen = c2
+		}
+		fResult := b.Sub(&BigNum{
+			_type:     INTERGER,
+			data:      append([]int8{int8(PN)},append(a2.pointData,make([]int8,len(maxFloatLen.pointData) - len(a2.pointData))...)...),
+		},&BigNum{
+			_type:     INTERGER,
+			data:      append([]int8{int8(PN)},append(c2.pointData,make([]int8,len(maxFloatLen.pointData) - len(c2.pointData))...)...),
+		})
+		// 恢复为浮点数
+		fResult.pointData = append(fResult.pointData,fResult.data[1:]...)
+		fResult.data = append(fResult.data[:1],0)
+		fResult._type = FLOAT
+		// add
+		return b.Add(iResult,fResult)
+	} else if a._type != c._type {
+		// 类型不相等时
+		// 对齐对应的浮点类型
+		// 涉及到修改时不破坏原始类型
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		if a2._type == FLOAT {
+			c2._type = FLOAT
+			c2.pointData = make([]int8,len(a2.pointData))
+		} else if c._type == FLOAT {
+			a2._type = FLOAT
+			a2.pointData = make([]int8,len(c2.pointData))
+		}
+		return b.Sub(a2,c2)
+	}
+	// 序列化
+	// 拼接成BigNum类型
+	bytes := make([]byte, 0)
+	for !integerResult.IsEmpty() {
+		r := integerResult.Pop().(int)
+		bytes = append(bytes, reverseTable[int8(r)])
+	}
+	var x BigNum
+	return x.FromString(string(bytes))
 }
+

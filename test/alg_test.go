@@ -41,4 +41,22 @@ func TestMath(t *testing.T) {
 	z2 = f1.Add(&f1,&f2)
 	t.Log(z2.String())
 	t.Log(f1.String())
+	// 大整数减法
+	z3 := i1.Sub(&i1,&i2)
+	t.Log(z3.String())
+	// 整数减法
+	z3 = i1.Sub(i1.FromString("10000"),i2.FromString("999"))
+	t.Log(z3.String())
+	// 被减数小于减数
+	z3 = i1.Sub(i1.FromString("10"),i2.FromString("999"))
+	t.Log(z3.String())
+	// 负数相减
+	z3 = i1.Sub(i1.FromString("-10.589572"),i2.FromString("67.58796796794"))
+	t.Log(z3.String())
+	// 正负相减
+	z3 = i1.Sub(i1.FromString("10.589572"),i2.FromString("-67.58796796794"))
+	t.Log(z3.String())
+	// 正小数相减
+	z3 = i1.Sub(i1.FromString("10.5"),i2.FromString("5.55"))
+	t.Log(z3.String())
 }
