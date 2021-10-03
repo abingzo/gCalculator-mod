@@ -71,4 +71,25 @@ func TestMath(t *testing.T) {
 	// 正小数相减
 	z3 = i1.Sub(i1.FromString("0.663"),i2.FromString("0.7"))
 	t.Log(z3.String())
+	// 正整数单乘多
+	z3 = i1.Ride(i1.FromString("9"),i2.FromString("9223"))
+	t.Log(z3.String())
+	// 正整数多乘多
+	z3 = i1.Ride(i1.FromString(strconv.FormatUint(2 << 62,10)),i2.FromString(strconv.FormatUint(2 << 62,10)))
+	t.Log(z3.String())
+	// 小数乘与小数
+	z3 = i1.Ride(i1.FromString("999.9559"),i2.FromString("92.9223"))
+	t.Log(z3.String())
+	// 小数乘与整数
+	z3 = i1.Ride(i1.FromString("999"),i2.FromString("92.9223"))
+	t.Log(z3.String())
+	// 负负相乘
+	z3 = i1.Ride(i1.FromString("-999"),i2.FromString("-92.9223"))
+	t.Log(z3.String())
+	// 正负相乘
+	z3 = i1.Ride(i1.FromString("9"),i2.FromString("-92.9223"))
+	t.Log(z3.String())
+	// 负正相乘
+	z3 = i1.Ride(i1.FromString("-9"),i2.FromString("92.9223"))
+	t.Log(z3.String())
 }

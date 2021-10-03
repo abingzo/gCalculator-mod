@@ -250,6 +250,18 @@ func (b *BigNum) Min(a,c *BigNum) *BigNum {
 	}
 }
 
+// 数字存储的真实长度
+// 不包括符号位和小数点
+func (b *BigNum) len() int {
+	if b._type == INTERGER {
+		return len(b.data) - 1
+	} else if b._type == FLOAT {
+		return len(b.data) - 1	+ len(b.pointData)
+	} else {
+		return 0
+	}
+}
+
 // 绝对值
 func (b *BigNum) Abs() *BigNum {
 	c := b.copy(b)
@@ -591,3 +603,149 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 	return element
 }
 
+// 乘法
+/*
+	单乘多 -> 多乘多 -> 小数多乘多
+*/
+func (b *BigNum) Ride(a,c *BigNum) *BigNum {
+	// 存储整数计算结果的栈
+	integerResult := alg.NewStack()
+	// 存储小数计算结果的栈
+	pointResult := alg.NewStack()
+	// 正整数单乘多
+	if a._type == c._type && a._type == INTERGER && (a.len() == 1 || c.len() == 1) {
+		var multiplicand *BigNum
+		var multiplier int8
+		if a.len() == 1 {
+			multiplicand = c
+			multiplier = a.data[len(a.data) - 1]
+		} else if c.len() == 1 {
+			multiplier = c.data[len(c.data) - 1]
+			multiplicand = a
+		}
+		// 结果集,用于竖式对齐
+		resultSet := alg.NewStack()
+		for i := len(multiplicand.data) - 1 ; i > 0 ; i-- {
+			// 相乘
+			r := multiplicand.data[i] * multiplier
+			var resultData []int8
+			if r > 9 {
+				resultData = []int8{r / 10,r % 10}
+			} else {
+				resultData = []int8{r}
+			}
+			// 补零
+			resultData = append(resultData,make([]int8,multiplicand.len() - i)...)
+			resultSet.Push(&BigNum{_type: INTERGER,data: append([]int8{int8(PN)},resultData...)})
+		}
+		// 相加并把结果压栈
+		// 取出来并逐个相加
+		addResult := &BigNum{}
+		// 创建哨兵条件，避免多次if导致的流水线
+		if !resultSet.IsEmpty() {
+			addResult = resultSet.Pop().(*BigNum)
+		}
+		for !resultSet.IsEmpty() {
+			r := resultSet.Pop().(*BigNum)
+			addResult = b.Add(addResult,r)
+		}
+		// 将最后的结果压栈
+		// 忽略符号位
+		for i := len(addResult.data) - 1; i > 0; i-- {
+			integerResult.Push(int(addResult.data[i]))
+		}
+	} else if a._type == c._type && a._type == INTERGER && a.len() > 1 && c.len() > 1 {
+		// 整数多乘多
+		multiplicand := b.Max(a,c)
+		multiplier := b.Min(a,c)
+		// 结果集
+		resultSet := alg.NewStack()
+		// 逐个相乘并补上零之后放入结果集
+		// 符号位不计算
+		for i := len(multiplier.data) - 1 ; i > 0; i-- {
+			r := b.Ride(&BigNum{_type: INTERGER,data: []int8{int8(PN),multiplier.data[i]}},multiplicand)
+			// 补零
+			r.data = append(r.data,make([]int8,multiplier.len() - i)...)
+			// 压栈
+			resultSet.Push(r)
+		}
+		// 取出来并逐个相加
+		addResult := &BigNum{}
+		// 创建哨兵条件，避免多次if导致的流水线
+		if !resultSet.IsEmpty() {
+			addResult = resultSet.Pop().(*BigNum)
+		}
+		for !resultSet.IsEmpty() {
+			r := resultSet.Pop().(*BigNum)
+			addResult = b.Add(addResult,r)
+		}
+		// 将最后的结果压栈
+		// 忽略符号位
+		for i := len(addResult.data) - 1; i > 0; i-- {
+			integerResult.Push(int(addResult.data[i]))
+		}
+	} else if a._type == c._type && a._type == FLOAT {
+		// 均为小数相乘的情况
+		// 将小数化为整数
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		// 记录化整的偏移量
+		offset := len(a2.pointData) + len(c2.pointData)
+		result := b.Ride(&BigNum{_type: INTERGER,data: append(a2.data,a2.pointData...)},
+		&BigNum{_type: INTERGER,data: append(c2.data,c2.pointData...)})
+		// 根据偏移量恢复小数
+		// 将小数结果压栈
+		for i := len(result.data) - 1; len(result.data) - offset <= i ; i-- {
+			pointResult.Push(int(result.data[i]))
+		}
+		// 将整数结果压栈
+		for i := len(result.data) - 1 - offset; i > 0; i-- {
+			integerResult.Push(int(result.data[i]))
+		}
+	} else if a._type != c._type && (a._type == FLOAT || c._type == FLOAT) {
+		// 一方为小数相乘的情况
+		// 注意非小数*小数与小数*小数有很大区别
+		// 找出为小数的一方
+		if a._type == FLOAT {
+			c2 := b.copy(c)
+			c2._type = FLOAT
+			c2.pointData = []int8{0}
+			return b.Ride(a,c2)
+		} else if c._type == FLOAT {
+			a2 := b.copy(a)
+			a2._type = FLOAT
+			a2.pointData = []int8{0}
+			return b.Ride(a2,c)
+		}
+	}
+	// 序列化
+	// 拼接成BigNum类型
+	element := &BigNum{}
+	if !integerResult.IsEmpty() {
+		element._type = INTERGER
+	}
+	if !pointResult.IsEmpty() {
+		element._type = FLOAT
+	}
+	// 负数的符号位确定比较简单，所以可以在后面确定
+	// 负负为正|有一负均为负|正正为正
+	if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
+		element.data = append(element.data,int8(PN))
+	} else if a.data[0] == c.data[0] && a.data[0] == int8(PN){
+		element.data = append(element.data,int8(PN))
+	}else if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
+		element.data = append(element.data,int8(NN))
+	}
+	for !integerResult.IsEmpty() {
+		element.data = append(element.data,int8(integerResult.Pop().(int)))
+	}
+	for !pointResult.IsEmpty() {
+		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+	}
+	return element
+}
+
+// 除法
+func (b *BigNum) Except(a,c *BigNum) *BigNum {
+	return nil
+}
