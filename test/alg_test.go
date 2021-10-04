@@ -87,9 +87,34 @@ func TestMath(t *testing.T) {
 	z3 = i1.Ride(i1.FromString("-999"),i2.FromString("-92.9223"))
 	t.Log(z3.String())
 	// 正负相乘
-	z3 = i1.Ride(i1.FromString("9"),i2.FromString("-92.9223"))
+	z3 = i1.Ride(i1.FromString("0.1"),i2.FromString("-0.1"))
 	t.Log(z3.String())
 	// 负正相乘
 	z3 = i1.Ride(i1.FromString("-9"),i2.FromString("92.9223"))
 	t.Log(z3.String())
+	/*
+		除法
+	*/
+	// 正整数相除
+	//z3 = i1.Except(i1.FromString("9"),i2.FromString("3"))
+	//t.Log(z3.String())
+}
+
+// 测试辅助函数的正确性
+func TestBigNumAuxFunction(t *testing.T) {
+	var x,y math.BigNum
+	a := x.Max(x.FromString("0.18364"),y.FromString("0.18365"))
+	// 整数的大小测试
+	if a == &x {
+		t.Log(x.String() + "大于" + y.String())
+	} else {
+		t.Error("正数的大小测试失败")
+	}
+	// 负数的大小测试
+	a = x.Max(x.FromString("-0.993"),y.FromString("0.1836"))
+	if a == &y {
+		t.Log(x.String() + "小于" + y.String())
+	} else {
+		t.Error("正数的大小测试失败")
+	}
 }

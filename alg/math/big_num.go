@@ -188,6 +188,7 @@ func hit(bl bool, a, b interface{}) interface{} {
 
 // 比较得出最大的数
 // a,c 为nil时返回nil
+// 相等时返回第一个数
 func (b *BigNum) Max(a,c *BigNum) *BigNum {
 	if a == nil && c == nil {
 		return nil
@@ -211,10 +212,12 @@ func (b *BigNum) Max(a,c *BigNum) *BigNum {
 			}
 		}
 		// 如果整数位相等且任意一数为小数
-		if c._type == FLOAT {
-			return c
-		} else if a._type == FLOAT {
-			return a
+		if a._type != c._type {
+			if c._type == FLOAT {
+				return c
+			} else {
+				return a
+			}
 		} else if a._type == c._type && a._type == INTERGER{
 			// 都为整数且相等则返回第一个数
 			return a
@@ -222,19 +225,23 @@ func (b *BigNum) Max(a,c *BigNum) *BigNum {
 		// 整数位相等且都为小数则比较小数位
 		a2 := b.copy(a)
 		c2 := b.copy(c)
-		toData := func(p *BigNum) {
-			p._type = INTERGER
-			dst := []int8{int8(PN)}
-			p.data = append(dst,p.pointData...)
+		// 修复小数位没有对其导致的比较错误
+		a2._type = INTERGER
+		c2._type = INTERGER
+		a2.data = append(a2.data,a2.pointData...)
+		c2.data = append(c2.data,c2.pointData...)
+		if a2.len() > c2.len() {
+			c2.data = append(c2.data,append(c2.pointData,make([]int8,a2.len() - c2.len())...)...)
+		} else if c2.len() > a2.len() {
+			a2.data = append(a2.data,append(a2.pointData,make([]int8,c2.len() - a2.len())...)...)
 		}
-		toData(a2)
-		toData(c2)
 		// 递归比较
+		// 小数较大的反而小
 		tmp := b.Max(a2,c2)
 		if tmp == a2 {
-			return a
-		} else {
 			return c
+		} else {
+			return a
 		}
 	}
 	return nil
@@ -746,6 +753,46 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 }
 
 // 除法
-func (b *BigNum) Except(a,c *BigNum) *BigNum {
-	return nil
-}
+/*
+	整数除法 -> 小数除法
+*/
+//func (b *BigNum) Except(a,c *BigNum) *BigNum {
+//	// 存储整数计算结果的栈
+//	integerResult := alg.NewStack()
+//	// 存储小数计算结果的栈
+//	pointResult := alg.NewStack()
+//
+//	if a._type == c._type && a._type == INTERGER {
+//		// 存储运算过程中溢出的数
+//		tmpFlow := alg.NewStack()
+//		// 创建哨兵条件
+//		// 找出一个比被除数要大的数
+//		// 被除数比除数大则借位
+//		offset := 0
+//		dividend := b.copy(a)
+//		divisor := b.copy(c)
+//		if b.Max(dividend,divisor) == divisor {
+//
+//		}
+//		for !tmpFlow.IsEmpty() {
+//
+//		}
+//	}
+//
+//	// 序列化
+//	// 拼接成BigNum类型
+//	element := &BigNum{}
+//	if !integerResult.IsEmpty() {
+//		element._type = INTERGER
+//	}
+//	if !pointResult.IsEmpty() {
+//		element._type = FLOAT
+//	}
+//	for !integerResult.IsEmpty() {
+//		element.data = append(element.data,int8(integerResult.Pop().(int)))
+//	}
+//	for !pointResult.IsEmpty() {
+//		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+//	}
+//	return element
+//}
