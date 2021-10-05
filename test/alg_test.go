@@ -1,6 +1,7 @@
 package test
 
 import (
+	"fmt"
 	"gCalculator-mod/alg"
 	"gCalculator-mod/alg/math"
 	"strconv"
@@ -110,11 +111,30 @@ func TestBigNumAuxFunction(t *testing.T) {
 	} else {
 		t.Error("正数的大小测试失败")
 	}
-	// 负数的大小测试
+	// 找出最大的数
 	a = x.Max(x.FromString("-0.993"),y.FromString("0.1836"))
 	if a == &y {
-		t.Log(x.String() + "小于" + y.String())
+		t.Log(fmt.Sprintf("在:%s&%s 中最大的数为:%s",x.String(),y.String(),y.String()))
 	} else {
-		t.Error("正数的大小测试失败")
+		t.Error("找出最大的数测试失败")
 	}
+	// 比较 x > y
+	if x.GT(x.FromString("00000199.540000"),y.FromString("0000100.5600000")) {
+		t.Log(x.String() + ">" + y.String())
+	} else {
+		t.Error("大于比较测试失败")
+	}
+	// 小于比较 a < y
+	if !x.LT(x.FromString("199.55"),y.FromString("000000000100.56")) {
+		t.Log(x.String() + "<" + y.String())
+	} else {
+		t.Error("小于比较测试失败")
+	}
+	// 等于比较
+	if x.EQ(x.FromString("00000018306.7678687577900000"),y.FromString("018306.7678687577900000")) {
+		t.Log(x.String() + "=" + y.String())
+	} else {
+		t.Error("等于比较测试失败")
+	}
+	t.Log()
 }
