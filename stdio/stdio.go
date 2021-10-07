@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// 间隔0.1秒读一次数据
+// ReadStdIn 间隔0.1秒读一次数据
 // 阻塞读取，读取到数据则解除阻塞
 func ReadStdIn() error {
 	for {

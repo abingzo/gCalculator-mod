@@ -15,6 +15,8 @@ const (
 	PN int = 11
 	// NN 负数
 	NN int = 10
+	// DivisionAccuracy 除法精度
+	DivisionAccuracy int = 20
 )
 
 var table = map[byte]int8{
@@ -335,7 +337,8 @@ func (b *BigNum) Min(a,c *BigNum) *BigNum {
 /*
 	比较运算符
 */
-// 等于
+// 值等于/大小等于
+// NOTE: 8.0 == 8 (9 == 9.00000) ( 17.35 == 17.3500)
 func (b *BigNum) EQ(a,c *BigNum) bool {
 	if a._type == c._type && a._type == INTEGER {
 		return sliceValueEQ(a.data,c.data)
@@ -399,6 +402,16 @@ func (b *BigNum) LT(a,c *BigNum) bool {
 		return false
 	}
 	return !b.GT(a,c)
+}
+
+// GE 大于等于
+func (b *BigNum) GE(a,c *BigNum) bool {
+	return b.GT(a,c) || b.EQ(a,c)
+}
+
+// LE 小于等于
+func (b *BigNum) LE(a,c *BigNum) bool {
+	return b.LT(a,c) || b.EQ(a,c)
 }
 
 // 数字存储的真实长度
@@ -901,27 +914,128 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 	整数除法 -> 小数除法
 */
 func (b *BigNum) Except(a,c *BigNum) *BigNum {
+	// 处理负数，有任一数为负数则结果为负数
+	if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
+		a2,c2 := b.copy(a),b.copy(c)
+		a2.data[0] = int8(PN);c2.data[0] = int8(PN)
+		tmp := b.Except(a2,c2)
+		tmp.data[0] = int8(NN)
+		return tmp
+	}
 	// 存储整数计算结果的栈
 	integerResult := alg.NewStack()
 	// 存储小数计算结果的栈
 	pointResult := alg.NewStack()
 
 	if a._type == c._type && a._type == INTEGER {
-		// 存储运算过程中溢出的数
-		tmpFlow := alg.NewStack()
+		// 临时整数结果存储
+		tmpIntResult := make([]int,0)
+		tmpFloatResult := make([]int,0)
 		// 创建哨兵条件
 		// 找出一个比被除数要大的数
 		// 被除数比除数大则借位
-		offset := 0
 		dividend := b.copy(a)
 		divisor := b.copy(c)
-		if b.Max(dividend,divisor) == divisor {
-			offset = divisor.len() - dividend.len()
-			dividend.data = append(dividend.data,make([]int8,offset)...)
+		offset := dividend.len()
+		// 一些函数
+		appendData := func(d int8) {
+			// 偏移量大于原始的被除数则填入小数结果集
+			if offset > a.len() {
+				tmpFloatResult = append(tmpFloatResult,int(d))
+			} else {
+				tmpIntResult = append(tmpIntResult,int(d))
+			}
 		}
-		for !tmpFlow.IsEmpty() {
-
+		// 初始除数大于被除数的情况
+		if b.GT(divisor,dividend) {
+			tmpFloatResult = append(tmpFloatResult,make([]int,divisor.len() - dividend.len())...)
+			tmpIntResult = append(tmpIntResult,0)
+			offset += divisor.len() - dividend.len()
+			dividend.data = append(dividend.data,make([]int8,divisor.len() - dividend.len())...)
 		}
+		// 记录截取除数的指针
+		divPtr := len(divisor.data)
+		for len(tmpIntResult) + len(tmpFloatResult) <= DivisionAccuracy {
+			// 运算中被除数大于除数的情况
+			if b.LT(dividend,divisor) && !b.EQ(dividend,divisor) {
+				// 被除数首位小于等于除数则还需要补一位
+				flow := len(divisor.data) - len(dividend.data)
+				if dividend.data[1] <= divisor.data[1] {
+					flow++
+				}
+				offset++
+				// 借位大于1的话则补上对应的零
+				if flow > 1 {
+					tmpFloatResult = append(tmpFloatResult,make([]int,flow - 1)...)
+				}
+				divPtr = len(divisor.data)
+				dividend.data = append(dividend.data,make([]int8,flow)...)
+			}
+			// 截取与被除数相等的长度进行比较,包括符号位
+			tmp := BigNum{_type: INTEGER,data: dividend.data[:divPtr]}
+			if !b.GT(&tmp,divisor) && b.NE(&tmp,divisor) {
+				divPtr++
+				continue
+			}
+			// 预测除数与被除数相差多少倍
+			// 截取被除数4位于除数3位，利用语言原生提供的除法预测
+			for i := 2 ; i <= 10 ; i++ {
+				if r := b.Ride(divisor,&BigNum{_type: INTEGER,data: []int8{int8(PN), int8(i)}}); b.GT(r,&tmp) {
+					appendData(int8(i - 1))
+					r = b.Sub(r,divisor)
+					// 将r补上零并减去
+					// 结果是整数位时才需要补零
+					if offset == a.len() {
+						r.data = append(r.data,make([]int8,len(dividend.data) - len(r.data))...)
+					}
+					dividend = b.Sub(dividend,r)
+					break
+				}
+			}
+			// 如果减法之后的结果为0，则直接输出
+			// 需要补上剩余的零，补零数量 = dividend.zeroLen - divisor.zeroLen
+			if b.EQ(dividend,&BigNum{_type: INTEGER,data: []int8{int8(PN),0}}) {
+				dividendZeroLen := len(a.data) - len(sliceDeleteRightZero(a.data))
+				divisorZeroLen := len(divisor.data) - len(sliceDeleteRightZero(divisor.data))
+				for i := 0; i < dividendZeroLen - divisorZeroLen; i++ {
+					appendData(0)
+				}
+				break
+			}
+			divPtr = len(divisor.data)
+		}
+		// 将结果去除并打上符号位
+		for i := len(tmpIntResult) - 1 ; i >= 0; i-- {
+			integerResult.Push(tmpIntResult[i])
+		}
+		for i := len(tmpFloatResult) - 1 ; i >= 0; i-- {
+			pointResult.Push(tmpFloatResult[i])
+		}
+		// 负数不在此处理
+		integerResult.Push(PN)
+	} else if a._type == c._type && a._type == FLOAT {
+		// 小数对齐计算
+		a2 := b.copy(a)
+		c2 := b.copy(c)
+		// 确定偏移量
+		offset := hit(len(a2.pointData) > len(c2.pointData),len(a2.pointData),len(c2.pointData)).(int)
+		a2.data = append(a2.data,append(a2.pointData,make([]int8,offset - len(a2.pointData))...)...)
+		c2.data = append(c2.data,append(c2.pointData,make([]int8,offset - len(c2.pointData))...)...)
+		a2._type = INTEGER
+		c2._type = INTEGER
+		// 清空pointData
+		a2.pointData = nil
+		c2.pointData = nil
+		return b.Except(a2,c2)
+	} else if a._type != c._type {
+		// 将不为小数的一方装换为小数进行运算
+		integer := b.copy(hit(a._type == INTEGER,a,c).(*BigNum))
+		float := b.copy(hit(a._type == FLOAT,a,c).(*BigNum))
+		integer._type = FLOAT
+		integer.pointData = append(integer.pointData,0)
+		dividend := hit(b.EQ(integer,a),integer,float).(*BigNum)
+		divisor := hit(b.EQ(float,c),float,integer).(*BigNum)
+		return b.Except(dividend,divisor)
 	}
 
 	// 序列化

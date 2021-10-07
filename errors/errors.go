@@ -1,4 +1,4 @@
-// 集中定义错误的包
+// Package errors 集中定义错误的包
 package errors
 
 import "errors"

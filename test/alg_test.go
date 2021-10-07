@@ -97,8 +97,17 @@ func TestMath(t *testing.T) {
 		除法
 	*/
 	// 正整数相除
-	//z3 = i1.Except(i1.FromString("9"),i2.FromString("3"))
-	//t.Log(z3.String())
+	z3 = i1.Except(i1.FromString("3150015"),i2.FromString("350000"))
+	t.Log(z3.String())
+	// 小数相除
+	z3 = i1.Except(i1.FromString("31.50015"),i2.FromString("3.5"))
+	t.Log(z3.String())
+	// 整数与小数相除
+	z3 = i1.Except(i1.FromString("30"),i2.FromString("2.55"))
+	t.Log(z3.String())
+	// 负数除法
+	z3 = i1.Except(i1.FromString("-20"),i2.FromString("2.55"))
+	t.Log(z3.String())
 }
 
 // 测试辅助函数的正确性
@@ -136,5 +145,10 @@ func TestBigNumAuxFunction(t *testing.T) {
 	} else {
 		t.Error("等于比较测试失败")
 	}
-	t.Log()
+	// 小于等于
+	if x.LE(x.FromString("00000018306.7678687577900000"),y.FromString("018306.7678687577900000")) {
+		t.Log(x.String() + "<=" + y.String())
+	} else {
+		t.Error("小于等于比较测试失败")
+	}
 }

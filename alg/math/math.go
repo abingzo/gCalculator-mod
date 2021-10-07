@@ -1,4 +1,4 @@
-// 存储一些支持的运算符的运算方法
+// Package math 存储一些支持的运算符的运算方法
 package math
 
 import (
@@ -7,27 +7,27 @@ import (
 )
 
 type Step interface {
-	// 加
+	// Add 加
 	Add(a,b string) string
-	// 减
+	// Sub 减
 	Sub(a,b string) string
-	// 乘
+	// Ride 乘
 	Ride(a,b string) string
-	// 除
+	// Except 除
 	Except(a,b string) string
 }
 
 const (
-	// 小数精度
+	// DECIMAL_PRECISION 小数精度
 	DECIMAL_PRECISION = 14
-	// 整数的精度
-	INTERGER_PRECISION = 20
+	// INTEGER_PRECISION 整数的精度
+	INTEGER_PRECISION = 20
 )
 
 // 数字的类型
 type numType int
 
-// 存储数字的结构体
+// Base 存储数字的结构体
 type Base struct {
 	// 左数
 	leftNum string
@@ -43,7 +43,7 @@ type Base struct {
 	bottomType *big.Int
 }
 
-// 函数入参绑定类型
+// Handler 函数入参绑定类型
 type Handler func(a,b string) string
 
 // 确定数字的类型
