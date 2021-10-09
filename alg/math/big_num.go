@@ -269,23 +269,25 @@ func sliceValueGT(a,c []int8) bool{
 	// 判断为整数还是小数
 	if isInteger(a,c) {
 		a,c = sliceDeleteLeftZero(a),sliceDeleteLeftZero(c)
+		// 整数比较则对齐左零
+		maxLen := hit(len(a) > len(c),len(a),len(c)).(int)
+		a = append(a[:1],append(make([]int8,maxLen - len(a)),a[1:]...)...)
+		c = append(c[:1],append(make([]int8,maxLen - len(c)),c[1:]...)...)
 	} else if isFloat(a,c) {
 		a,c = sliceDeleteRightZero(a),sliceDeleteRightZero(c)
+		// 在小数比较值大小前对齐长度，防止越界
+		// 小数则对齐右零
+		maxLen := hit(len(a) > len(c),len(a),len(c)).(int)
+		a = append(a,make([]int8,maxLen - len(a))...)
+		c = append(c,make([]int8,maxLen - len(c))...)
 	}
-
-	if len(a) > len(c) {
-		return true
-	}  else if len(a) < len(c){
-		return false
-	} else if len(a) == len(c) {
-		// 长度相同的情况下
-		// 从大到小遍历
-		for i := 0; i < len(a);i++ {
-			if a[i] > c[i] {
-				return true
-			} else if a[i] < c[i] {
-				return false
-			}
+	// TODO:不能取巧判断长度来判断值得大小，因为可能有02和000009这类小数值
+	// 从大到小遍历
+	for i := 0; i < len(a);i++ {
+		if a[i] > c[i] {
+			return true
+		} else if a[i] < c[i] {
+			return false
 		}
 	}
 	return false
@@ -375,7 +377,7 @@ func (b *BigNum) GT(a,c *BigNum) bool {
 		return sliceValueGT(a.data,c.data)
 	} else if a._type == FLOAT || c._type == FLOAT {
 		// 小数的比较大小的bool值要取反
-		return hit(sliceValueEQ(a.data,c.data),!sliceValueGT(a.pointData,c.pointData), sliceValueGT(a.data,c.data)).(bool)
+		return hit(sliceValueEQ(a.data,c.data),sliceValueGT(a.pointData,c.pointData), sliceValueGT(a.data,c.data)).(bool)
 	} else if a._type != c._type {
 		// 一方为小数时比较大小
 		if !sliceValueEQ(a.data,c.data) {
@@ -640,6 +642,11 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			p.data[0] = int8(NN)
 		}(c)
 		return b.Add(a,c)
+	} else if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
+		// 负负相减
+		c2 := b.copy(c)
+		c2.data[0] = int8(PN)
+		return b.Add(a,c2)
 	}
 	// 存储整数计算结果的栈
 	integerResult := alg.NewStack()
@@ -915,7 +922,12 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 */
 func (b *BigNum) Except(a,c *BigNum) *BigNum {
 	// 处理负数，有任一数为负数则结果为负数
-	if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
+	// 负负为正
+	if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
+		a2,c2 := b.copy(a),b.copy(c)
+		a2.data[0] = int8(PN);c2.data[0] = int8(PN)
+		return b.Except(a2,c2)
+	} else if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
 		a2,c2 := b.copy(a),b.copy(c)
 		a2.data[0] = int8(PN);c2.data[0] = int8(PN)
 		tmp := b.Except(a2,c2)
@@ -937,6 +949,12 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		dividend := b.copy(a)
 		divisor := b.copy(c)
 		offset := dividend.len()
+		// 记录匹配点，用于补零
+		point := []int{0}
+		// 匹配点的向量,从第一个匹配的数开始
+		pointIV := 1
+		// 从左向右除法未补零的原生长度
+		nativeLen := 0
 		// 一些函数
 		appendData := func(d int8) {
 			// 偏移量大于原始的被除数则填入小数结果集
@@ -948,7 +966,8 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		}
 		// 初始除数大于被除数的情况
 		if b.GT(divisor,dividend) {
-			tmpFloatResult = append(tmpFloatResult,make([]int,divisor.len() - dividend.len())...)
+			// 因为整数位要补零，所以小数位的补零数量-1
+			tmpFloatResult = append(tmpFloatResult,make([]int,divisor.len() - dividend.len() - 1)...)
 			tmpIntResult = append(tmpIntResult,0)
 			offset += divisor.len() - dividend.len()
 			dividend.data = append(dividend.data,make([]int8,divisor.len() - dividend.len())...)
@@ -956,7 +975,7 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		// 记录截取除数的指针
 		divPtr := len(divisor.data)
 		for len(tmpIntResult) + len(tmpFloatResult) <= DivisionAccuracy {
-			// 运算中被除数大于除数的情况
+			// 运算中被除数小于除数的情况
 			if b.LT(dividend,divisor) && !b.EQ(dividend,divisor) {
 				// 被除数首位小于等于除数则还需要补一位
 				flow := len(divisor.data) - len(dividend.data)
@@ -969,6 +988,8 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 					tmpFloatResult = append(tmpFloatResult,make([]int,flow - 1)...)
 				}
 				divPtr = len(divisor.data)
+				// 匹配点的向量减去借位的位数
+				pointIV -= flow
 				dividend.data = append(dividend.data,make([]int8,flow)...)
 			}
 			// 截取与被除数相等的长度进行比较,包括符号位
@@ -977,27 +998,44 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 				divPtr++
 				continue
 			}
+			// 添加实际长度的匹配点，忽略符号位
+			point = append(point,point[len(point) - 1] + divPtr - len(divisor.data))
 			// 预测除数与被除数相差多少倍
 			// 截取被除数4位于除数3位，利用语言原生提供的除法预测
 			for i := 2 ; i <= 10 ; i++ {
 				if r := b.Ride(divisor,&BigNum{_type: INTEGER,data: []int8{int8(PN), int8(i)}}); b.GT(r,&tmp) {
+					// 比较两次的匹配点
+					// 匹配点有间隔的数则补上缺失的零
+					// 对齐匹配点
+					if p,j := point[len(point) - 1] + pointIV,point[len(point) - 2]; p - j >= 2 {
+						for j := p - j - 1 ; j > 0; j-- {
+							appendData(0)
+						}
+						point[len(point) - 1] = p
+						pointIV = 0
+					}
 					appendData(int8(i - 1))
 					r = b.Sub(r,divisor)
 					// 将r补上零并减去
 					// 结果是整数位时才需要补零
 					if offset == a.len() {
+						nativeLen = len(dividend.data) - len(r.data)
 						r.data = append(r.data,make([]int8,len(dividend.data) - len(r.data))...)
 					}
+					oldDividendLen := len(dividend.data)
 					dividend = b.Sub(dividend,r)
+					// 与上一次的结果相减之后的结果的长度比上一次小于2的话则添加匹配点向量
+					if r := oldDividendLen - len(dividend.data); r > 1 {
+						pointIV += r - 1
+					}
 					break
 				}
 			}
+			// TODO:优化补零算法
 			// 如果减法之后的结果为0，则直接输出
 			// 需要补上剩余的零，补零数量 = dividend.zeroLen - divisor.zeroLen
 			if b.EQ(dividend,&BigNum{_type: INTEGER,data: []int8{int8(PN),0}}) {
-				dividendZeroLen := len(a.data) - len(sliceDeleteRightZero(a.data))
-				divisorZeroLen := len(divisor.data) - len(sliceDeleteRightZero(divisor.data))
-				for i := 0; i < dividendZeroLen - divisorZeroLen; i++ {
+				for i := nativeLen; i > 0; i-- {
 					appendData(0)
 				}
 				break
@@ -1019,8 +1057,9 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		c2 := b.copy(c)
 		// 确定偏移量
 		offset := hit(len(a2.pointData) > len(c2.pointData),len(a2.pointData),len(c2.pointData)).(int)
-		a2.data = append(a2.data,append(a2.pointData,make([]int8,offset - len(a2.pointData))...)...)
-		c2.data = append(c2.data,append(c2.pointData,make([]int8,offset - len(c2.pointData))...)...)
+		// 去除左边的无意义零，保证计算结果的准确性
+		a2.data = sliceDeleteLeftZero(append(a2.data,append(a2.pointData,make([]int8,offset - len(a2.pointData))...)...))
+		c2.data = sliceDeleteLeftZero(append(c2.data,append(c2.pointData,make([]int8,offset - len(c2.pointData))...)...))
 		a2._type = INTEGER
 		c2._type = INTEGER
 		// 清空pointData

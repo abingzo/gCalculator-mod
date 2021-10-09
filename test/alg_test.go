@@ -1,10 +1,8 @@
 package test
 
 import (
-	"fmt"
 	"gCalculator-mod/alg"
 	"gCalculator-mod/alg/math"
-	"strconv"
 	"testing"
 )
 
@@ -19,136 +17,191 @@ func TestStack(t *testing.T) {
 	t.Log(stack.IsEmpty())
 }
 
+// Result|num|num
+type Case map[string]map[string]string
+
+// 辅助函数的测试用例类型
+type AuxCase map[bool]map[string]string
+
 func TestMath(t *testing.T) {
+	// 加法的测试用例
+	var AddCase Case = map[string]map[string]string{
+		"100":{"10":"90","1":"99","200":"-100"},
+		"-200":{"-100":"-100","-199.5":"-0.5"},
+		"99.55":{"10":"89.55","9":"90.55","99.1":"0.45"},
+		"0":{"-199":"199"},
+		"18070406285660840000000000000":{"9.903520314283042e+27":"9.903520314283042e+27"},
+	}
+	// 减法的测试用例
+	var SubCase Case = map[string]map[string]string{
+		"-100":{"100":"200","-200":"-100"},
+		"999":{"-999":"-1998","1998":"999"},
+		"50.5":{"100":"49.5","170.9":"120.4"},
+	}
+	// 乘法的测试用例
+	var RideCase Case = map[string]map[string]string{
+		"100":{"10":"10","1":"100","20":"5","-20":"-5"},
+		"-120":{"-20":"6","20":"-6","-240":"0.5"},
+		"16.25":{"2.5":"6.5","4":"4.0625"},
+	}
+	// 除法的测试用例
+	var ExceptCase Case = map[string]map[string]string{
+		"100":{"10000":"100","1":"0.01","10":"0.1"},
+		"10086":{"90774":"9"},
+		"1086":{"9774":"9"},
+		"4568000950":{"15988003325":"3.5"},
+		"400":{"0.89":"0.002225"},
+		"107800":{"970200":"9"},
+		"0.0475":{"9.5":"200"},
+	}
 	var x,y math.BigNum
-	x.FromString("+" + strconv.FormatUint(2 << 62,10) + "223372036854775808")
-	y.FromString("-" + strconv.FormatUint(2 << 62,10) + "." + strconv.FormatInt(2 << 61,10))
-	t.Log(x.String())
-	t.Log(y.String())
-	var i1,i2 math.BigNum
-	i1.FromString("223372036854775808")
-	i2.FromString("999")
-	z := i1.Add(&i1,&i2)
-	t.Log(z.String())
-	// 浮点数相加
-	var f1,f2 math.BigNum
-	f1.FromString("0.333")
-	f2.FromString("0.33")
-	z2 := f1.Add(&f1,&f2)
-	t.Log(z2.String())
-	// 浮点数与整数相加
-	f1.FromString("37332686")
-	f2.FromString("726578685.76786875779")
-	z2 = f1.Add(&f1,&f2)
-	t.Log("浮点数与整数相加:" + z2.String())
-	t.Log("浮点数:" + f1.String())
-	// 负数相加
-	z2 = f1.Add(f1.FromString("-20"),f2.FromString("-40"))
-	t.Log("负负相加:" + z2.String())
-	// 负正相加
-	z2 = f1.Add(f1.FromString("-20.7456356"),f2.FromString("40.54363846"))
-	t.Log("负正相加:" + z2.String())
-	// 正负相加
-	z2 = f1.Add(f1.FromString("7954.874297492"),f2.FromString("-987593275.5827592"))
-	t.Log("正负相加:" + z2.String())
-	// 精度小数相加
-	z2 = f1.Add(f1.FromString("0.30000004"),f2.FromString("0.3004400005"))
-	t.Log("精度小数相加:" + z2.String())
-	// 大整数减法
-	z3 := i1.Sub(&i1,&i2)
-	t.Log(z3.String())
-	// 整数减法
-	z3 = i1.Sub(i1.FromString("10000"),i2.FromString("999"))
-	t.Log(z3.String())
-	// 被减数小于减数
-	z3 = i1.Sub(i1.FromString("10"),i2.FromString("999"))
-	t.Log(z3.String())
-	// 负数相减
-	z3 = i1.Sub(i1.FromString("-10.589572"),i2.FromString("67.58796796794"))
-	t.Log(z3.String())
-	// 正负相减
-	z3 = i1.Sub(i1.FromString("10.589572"),i2.FromString("-67.58796796794"))
-	t.Log(z3.String())
-	// 正小数相减
-	z3 = i1.Sub(i1.FromString("0.663"),i2.FromString("0.7"))
-	t.Log(z3.String())
-	// 正整数单乘多
-	z3 = i1.Ride(i1.FromString("9"),i2.FromString("9223"))
-	t.Log(z3.String())
-	// 正整数多乘多
-	z3 = i1.Ride(i1.FromString(strconv.FormatUint(2 << 62,10)),i2.FromString(strconv.FormatUint(2 << 62,10)))
-	t.Log(z3.String())
-	// 小数乘与小数
-	z3 = i1.Ride(i1.FromString("999.9559"),i2.FromString("92.9223"))
-	t.Log(z3.String())
-	// 小数乘与整数
-	z3 = i1.Ride(i1.FromString("999"),i2.FromString("92.9223"))
-	t.Log(z3.String())
-	// 负负相乘
-	z3 = i1.Ride(i1.FromString("-999"),i2.FromString("-92.9223"))
-	t.Log(z3.String())
-	// 正负相乘
-	z3 = i1.Ride(i1.FromString("0.1"),i2.FromString("-0.1"))
-	t.Log(z3.String())
-	// 负正相乘
-	z3 = i1.Ride(i1.FromString("-9"),i2.FromString("92.9223"))
-	t.Log(z3.String())
-	/*
-		除法
-	*/
-	// 正整数相除
-	z3 = i1.Except(i1.FromString("3150015"),i2.FromString("350000"))
-	t.Log(z3.String())
-	// 小数相除
-	z3 = i1.Except(i1.FromString("31.50015"),i2.FromString("3.5"))
-	t.Log(z3.String())
-	// 整数与小数相除
-	z3 = i1.Except(i1.FromString("30"),i2.FromString("2.55"))
-	t.Log(z3.String())
-	// 负数除法
-	z3 = i1.Except(i1.FromString("-20"),i2.FromString("2.55"))
-	t.Log(z3.String())
+	// 测试加法
+	for k, v := range AddCase {
+		for kk,vv := range v {
+			if r := x.Add(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("加法测试失败: %s+%s=%s",kk,vv,r)
+				break
+			}
+		}
+	}
+	t.Log("加法测试成功")
+	// 测试减法
+	for k, v := range SubCase {
+		for kk,vv := range v {
+			if r := x.Sub(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("减法测试失败: %s-%s=%s",kk,vv,r)
+				break
+			}
+		}
+	}
+	t.Log("减法测试成功")
+	// 测试乘法
+	for k, v := range RideCase {
+		for kk,vv := range v {
+			if r := x.Ride(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("乘法测试失败: %s*%s=%s",kk,vv,r)
+				break
+			}
+		}
+	}
+	t.Log("乘法测试成功")
+	// 测试除法
+	for k, v := range ExceptCase {
+		for kk,vv := range v {
+			if r := x.Except(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("除法测试失败: %s/%s=%s",kk,vv,r)
+				break
+			}
+		}
+	}
+	t.Log("除法测试成功")
 }
 
 // 测试辅助函数的正确性
 func TestBigNumAuxFunction(t *testing.T) {
+	// 比较大的测试用例
+	var Max Case = map[string]map[string]string{
+		"0.1835":{"0.18304":"0.1835"},
+	}
+	// 比较小的测试用例
+	var Min Case = map[string]map[string]string{
+		"0.18304":{"0.18304":"0.18305"},
+	}
+	// 布尔类型的比较测试用例
+	// 比较是否大于
+	var GT AuxCase = map[bool]map[string]string{
+		true: {"9":"8"},
+		false: {"8":"9","9":"9","10.505":"10.50506"},
+	}
+	// 比较是否小于
+	var LT AuxCase = map[bool]map[string]string{
+		true: {"8":"9","0.80001":"0.800019"},
+		false: {"0.800019":"0.80001"},
+	}
+	// 比较是否等于
+	var EQ AuxCase = map[bool]map[string]string{
+		true: {"0.1":"0.10"},
+		false: {"0.183040000":"0.18304001"},
+	}
+	// 比较是否小于等于
+	var LE AuxCase = map[bool]map[string]string{
+		true: {"0.2":"0.5"},
+		false: {"456789.02":"456789.0000001"},
+	}
+	// 比较是否大于等于
+	var GE AuxCase = map[bool]map[string]string{
+		true: {"76":"75.9","76.2":"76.08","76.002":"76.0020000"},
+		false: {"76.0":"76.0000001"},
+	}
 	var x,y math.BigNum
-	a := x.Max(x.FromString("0.18364"),y.FromString("0.18365"))
-	// 整数的大小测试
-	if a == &x {
-		t.Log(x.String() + "大于" + y.String())
-	} else {
-		t.Error("正数的大小测试失败")
+	// 测试max
+	for k, v := range Max {
+		for kk,vv := range v {
+			if r := x.Max(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("找出最大的数测试失败: %s和%s中最大的数为:%s",kk,vv,r)
+				break
+			}
+		}
 	}
-	// 找出最大的数
-	a = x.Max(x.FromString("-0.993"),y.FromString("0.1836"))
-	if a == &y {
-		t.Log(fmt.Sprintf("在:%s&%s 中最大的数为:%s",x.String(),y.String(),y.String()))
-	} else {
-		t.Error("找出最大的数测试失败")
+	t.Log("Max测试成功")
+	// 测试min
+	for k, v := range Min {
+		for kk,vv := range v {
+			if r := x.Min(x.FromString(kk),y.FromString(vv)); !x.EQ(r,x.FromString(k)) {
+				t.Errorf("找出最小的数测试失败: %s和%s中最小的数为:%s",kk,vv,r)
+				break
+			}
+		}
 	}
-	// 比较 x > y
-	if x.GT(x.FromString("00000199.540000"),y.FromString("0000100.5600000")) {
-		t.Log(x.String() + ">" + y.String())
-	} else {
-		t.Error("大于比较测试失败")
+	t.Log("Min测试成功")
+	// 测试GT
+	for k, v := range GT {
+		for kk,vv := range v {
+			if r := x.GT(x.FromString(kk),y.FromString(vv)); !(r == k) {
+				t.Errorf("GT测试失败: %s>%s的结果为%v",kk,vv,r)
+				break
+			}
+		}
 	}
-	// 小于比较 a < y
-	if !x.LT(x.FromString("199.55"),y.FromString("000000000100.56")) {
-		t.Log(x.String() + "<" + y.String())
-	} else {
-		t.Error("小于比较测试失败")
+	t.Log("GT测试成功")
+	// 测试LT
+	for k, v := range LT {
+		for kk,vv := range v {
+			if r := x.LT(x.FromString(kk),y.FromString(vv)); !(r == k) {
+				t.Errorf("LT测试失败: %s<%s的结果为%v",kk,vv,r)
+				break
+			}
+		}
 	}
-	// 等于比较
-	if x.EQ(x.FromString("00000018306.7678687577900000"),y.FromString("018306.7678687577900000")) {
-		t.Log(x.String() + "=" + y.String())
-	} else {
-		t.Error("等于比较测试失败")
+	t.Log("LT测试成功")
+	// 测试EQ
+	for k, v := range EQ {
+		for kk,vv := range v {
+			if r := x.EQ(x.FromString(kk),y.FromString(vv)); !(r == k) {
+				t.Errorf("EQ测试失败: %s==%s的结果为%v",kk,vv,r)
+				break
+			}
+		}
 	}
-	// 小于等于
-	if x.LE(x.FromString("00000018306.7678687577900000"),y.FromString("018306.7678687577900000")) {
-		t.Log(x.String() + "<=" + y.String())
-	} else {
-		t.Error("小于等于比较测试失败")
+	t.Log("EQ测试成功")
+	// 测试GE
+	for k, v := range GE {
+		for kk,vv := range v {
+			if r := x.GE(x.FromString(kk),y.FromString(vv)); !(r == k) {
+				t.Errorf("GE测试失败: %s>=%s的结果为%v",kk,vv,r)
+				break
+			}
+		}
 	}
+	t.Log("GE测试成功")
+	// 测试LE
+	for k, v := range LE {
+		for kk,vv := range v {
+			if r := x.LE(x.FromString(kk),y.FromString(vv)); !(r == k) {
+				t.Errorf("LE测试失败: %s<=%s的结果为%v",kk,vv,r)
+				break
+			}
+		}
+	}
+	t.Log("LE测试成功")
 }
