@@ -1,5 +1,8 @@
-// Package alg 基于Go标准库的双向链表实现的简单栈
 package alg
+
+/*
+	简单的栈结构实现
+*/
 
 import "container/list"
 

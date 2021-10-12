@@ -4,6 +4,6 @@ package errors
 import "errors"
 
 var (
-	StdInPipeNotExist = errors.New("stdIn pipe not exist")
+	StdInPipeNotExist  = errors.New("stdIn pipe not exist")
 	StdOutPipeNotExist = errors.New("stdOut pipe not exist")
 )

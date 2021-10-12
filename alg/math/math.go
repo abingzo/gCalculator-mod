@@ -8,21 +8,14 @@ import (
 
 type Step interface {
 	// Add 加
-	Add(a,b string) string
+	Add(a, b string) string
 	// Sub 减
-	Sub(a,b string) string
+	Sub(a, b string) string
 	// Ride 乘
-	Ride(a,b string) string
+	Ride(a, b string) string
 	// Except 除
-	Except(a,b string) string
+	Except(a, b string) string
 }
-
-const (
-	// DECIMAL_PRECISION 小数精度
-	DECIMAL_PRECISION = 14
-	// INTEGER_PRECISION 整数的精度
-	INTEGER_PRECISION = 20
-)
 
 // 数字的类型
 type numType int
@@ -44,17 +37,17 @@ type Base struct {
 }
 
 // Handler 函数入参绑定类型
-type Handler func(a,b string) string
+type Handler func(a, b string) string
 
 // 确定数字的类型
 // 并将结果保存到结构体的字段中
-func (b2 *Base) checkNumType()  {
+func (b2 *Base) checkNumType() {
 	// 包含小数点则为小数
-	if result := strings.Index(b2.leftNum,"."); result > 0 {
+	if result := strings.Index(b2.leftNum, "."); result > 0 {
 		b2.pointPtr = len(b2.leftNum) - result
 	}
 	// 第二个操作数为小数且大于原有的小数的位置
-	if result := strings.Index(b2.rightNum,"."); result > 0 && len(b2.rightNum) - result > b2.pointPtr {
+	if result := strings.Index(b2.rightNum, "."); result > 0 && len(b2.rightNum)-result > b2.pointPtr {
 
 	}
 }

@@ -1,5 +1,9 @@
 package task
 
-func NewCommandTask() error {}
+func NewCommandTask() error {
+	return nil
+}
 
-func NewCalculationTask() error {}
+func NewCalculationTask() error {
+	return nil
+}

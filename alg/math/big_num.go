@@ -112,7 +112,7 @@ func (b *BigNum) FromString(s string) *BigNum {
 	if strings.HasPrefix(s, "-") {
 		b.data[0] = int8(NN)
 		offset += 1
-	} else if strings.HasPrefix(s,"+") {
+	} else if strings.HasPrefix(s, "+") {
 		offset += 1
 		b.data[0] = int8(PN)
 	} else {
@@ -193,7 +193,7 @@ func hit(bl bool, a, b interface{}) interface{} {
 // 找出BigNum中的非nil
 // 都为nil则返回nil
 // 都不为nil则返回nil
-func checkNil(a,c *BigNum) *BigNum {
+func checkNil(a, c *BigNum) *BigNum {
 	if a == nil && c == nil {
 		return nil
 	} else if a != nil && c == nil {
@@ -207,12 +207,12 @@ func checkNil(a,c *BigNum) *BigNum {
 
 // 均为整数?
 // 判断是否均为整数切片
-func isInteger(a,c []int8) bool {
+func isInteger(a, c []int8) bool {
 	return a[0] == int8(PN) && c[0] == int8(PN)
 }
 
 // 均为小数？
-func isFloat(a,c []int8) bool {
+func isFloat(a, c []int8) bool {
 	return a[0] <= 9 && c[0] <= 9
 }
 
@@ -220,11 +220,11 @@ func isFloat(a,c []int8) bool {
 // 值相等的前提下，删除无意义的0值
 // 去除左边的零
 func sliceDeleteLeftZero(a []int8) []int8 {
-	aDst := make([]int8,0,len(a))
+	aDst := make([]int8, 0, len(a))
 	// 有符号位的情况
 	ptr := 0
 	if a[0] == int8(PN) || a[0] == int8(NN) {
-		aDst = append(aDst,a[0])
+		aDst = append(aDst, a[0])
 		ptr = 1
 	} else {
 		// 无符号位
@@ -237,7 +237,7 @@ func sliceDeleteLeftZero(a []int8) []int8 {
 			ptr++
 		}
 	}
-	aDst = append(aDst,a[ptr:]...)
+	aDst = append(aDst, a[ptr:]...)
 	return aDst
 }
 
@@ -245,7 +245,7 @@ func sliceDeleteLeftZero(a []int8) []int8 {
 // 值相等的前提下，删除无意义的0值
 // 去除右边的零
 func sliceDeleteRightZero(a []int8) []int8 {
-	aDst := make([]int8,0,len(a))
+	aDst := make([]int8, 0, len(a))
 	ptr := len(a)
 	for i := len(a) - 1; i >= 0; i-- {
 		if r := a[i]; r != 0 {
@@ -254,12 +254,12 @@ func sliceDeleteRightZero(a []int8) []int8 {
 			ptr--
 		}
 	}
-	aDst = append(aDst,a[:ptr]...)
+	aDst = append(aDst, a[:ptr]...)
 	return aDst
 }
 
 // 比较切片的数值大小 a > c,并返回true或者false
-func sliceValueGT(a,c []int8) bool{
+func sliceValueGT(a, c []int8) bool {
 	if c == nil && a != nil {
 		return true
 	}
@@ -267,23 +267,23 @@ func sliceValueGT(a,c []int8) bool{
 		return false
 	}
 	// 判断为整数还是小数
-	if isInteger(a,c) {
-		a,c = sliceDeleteLeftZero(a),sliceDeleteLeftZero(c)
+	if isInteger(a, c) {
+		a, c = sliceDeleteLeftZero(a), sliceDeleteLeftZero(c)
 		// 整数比较则对齐左零
-		maxLen := hit(len(a) > len(c),len(a),len(c)).(int)
-		a = append(a[:1],append(make([]int8,maxLen - len(a)),a[1:]...)...)
-		c = append(c[:1],append(make([]int8,maxLen - len(c)),c[1:]...)...)
-	} else if isFloat(a,c) {
-		a,c = sliceDeleteRightZero(a),sliceDeleteRightZero(c)
+		maxLen := hit(len(a) > len(c), len(a), len(c)).(int)
+		a = append(a[:1], append(make([]int8, maxLen-len(a)), a[1:]...)...)
+		c = append(c[:1], append(make([]int8, maxLen-len(c)), c[1:]...)...)
+	} else if isFloat(a, c) {
+		a, c = sliceDeleteRightZero(a), sliceDeleteRightZero(c)
 		// 在小数比较值大小前对齐长度，防止越界
 		// 小数则对齐右零
-		maxLen := hit(len(a) > len(c),len(a),len(c)).(int)
-		a = append(a,make([]int8,maxLen - len(a))...)
-		c = append(c,make([]int8,maxLen - len(c))...)
+		maxLen := hit(len(a) > len(c), len(a), len(c)).(int)
+		a = append(a, make([]int8, maxLen-len(a))...)
+		c = append(c, make([]int8, maxLen-len(c))...)
 	}
 	// TODO:不能取巧判断长度来判断值得大小，因为可能有02和000009这类小数值
 	// 从大到小遍历
-	for i := 0; i < len(a);i++ {
+	for i := 0; i < len(a); i++ {
 		if a[i] > c[i] {
 			return true
 		} else if a[i] < c[i] {
@@ -295,17 +295,17 @@ func sliceValueGT(a,c []int8) bool{
 
 // 比较切片的数值是否相等
 // TODO:会忽略整数开始的零和小数后面的零
-func sliceValueEQ(a,c []int8) bool {
+func sliceValueEQ(a, c []int8) bool {
 	// 判断为整数还是小数
-	if isInteger(a,c) {
-		a,c = sliceDeleteLeftZero(a),sliceDeleteLeftZero(c)
-	} else if isFloat(a,c) {
-		a,c = sliceDeleteRightZero(a),sliceDeleteRightZero(c)
+	if isInteger(a, c) {
+		a, c = sliceDeleteLeftZero(a), sliceDeleteLeftZero(c)
+	} else if isFloat(a, c) {
+		a, c = sliceDeleteRightZero(a), sliceDeleteRightZero(c)
 	}
 	if len(a) != len(c) {
 		return false
 	}
-	for k,v := range a {
+	for k, v := range a {
 		if v != c[k] {
 			return false
 		}
@@ -316,19 +316,19 @@ func sliceValueEQ(a,c []int8) bool {
 // Max 比较得出最大的数
 // a,c 为nil时返回nil
 // 相等时返回第一个数
-func (b *BigNum) Max(a,c *BigNum) *BigNum {
+func (b *BigNum) Max(a, c *BigNum) *BigNum {
 	if a == nil || c == nil {
-		return checkNil(a,c)
+		return checkNil(a, c)
 	}
-	if b.EQ(a,c) {
+	if b.EQ(a, c) {
 		return a
 	}
-	return hit(b.GT(a,c),a,c).(*BigNum)
+	return hit(b.GT(a, c), a, c).(*BigNum)
 }
 
 // Min 比较得出最小的数
-func (b *BigNum) Min(a,c *BigNum) *BigNum {
-	tmp := b.Max(a,c)
+func (b *BigNum) Min(a, c *BigNum) *BigNum {
+	tmp := b.Max(a, c)
 	if tmp == a {
 		return c
 	} else {
@@ -341,79 +341,79 @@ func (b *BigNum) Min(a,c *BigNum) *BigNum {
 */
 // 值等于/大小等于
 // NOTE: 8.0 == 8 (9 == 9.00000) ( 17.35 == 17.3500)
-func (b *BigNum) EQ(a,c *BigNum) bool {
+func (b *BigNum) EQ(a, c *BigNum) bool {
 	if a._type == c._type && a._type == INTEGER {
-		return sliceValueEQ(a.data,c.data)
+		return sliceValueEQ(a.data, c.data)
 	}
 	if a._type == c._type && a._type == FLOAT {
-		return sliceValueEQ(a.data,c.data) && sliceValueEQ(a.pointData,c.pointData)
+		return sliceValueEQ(a.data, c.data) && sliceValueEQ(a.pointData, c.pointData)
 	} else if a._type != c._type {
 		// 一方为小数时比较大小
-		if !sliceValueEQ(a.data,c.data) {
+		if !sliceValueEQ(a.data, c.data) {
 			return false
 		}
 		if a._type == FLOAT {
 			c = b.copy(c)
 			c._type = FLOAT
-			c.pointData = make([]int8,len(a.pointData))
+			c.pointData = make([]int8, len(a.pointData))
 		} else if c._type == FLOAT {
 			a = b.copy(a)
 			a._type = FLOAT
-			a.pointData = make([]int8,len(c.pointData))
+			a.pointData = make([]int8, len(c.pointData))
 		}
-		return hit(sliceValueEQ(a.pointData,c.pointData),true,false).(bool)
+		return hit(sliceValueEQ(a.pointData, c.pointData), true, false).(bool)
 	}
 	return false
 }
 
 // NE 不等于
-func (b *BigNum) NE(a,c *BigNum) bool {
-	return !b.EQ(a,c)
+func (b *BigNum) NE(a, c *BigNum) bool {
+	return !b.EQ(a, c)
 }
 
 // GT 大于
-func (b *BigNum) GT(a,c *BigNum) bool {
+func (b *BigNum) GT(a, c *BigNum) bool {
 	if a._type == c._type && a._type == INTEGER {
-		return sliceValueGT(a.data,c.data)
+		return sliceValueGT(a.data, c.data)
 	} else if a._type == FLOAT || c._type == FLOAT {
 		// 小数的比较大小的bool值要取反
-		return hit(sliceValueEQ(a.data,c.data),sliceValueGT(a.pointData,c.pointData), sliceValueGT(a.data,c.data)).(bool)
+		return hit(sliceValueEQ(a.data, c.data), sliceValueGT(a.pointData, c.pointData), sliceValueGT(a.data, c.data)).(bool)
 	} else if a._type != c._type {
 		// 一方为小数时比较大小
-		if !sliceValueEQ(a.data,c.data) {
-			return sliceValueGT(a.data,c.data)
+		if !sliceValueEQ(a.data, c.data) {
+			return sliceValueGT(a.data, c.data)
 		}
 		if a._type == FLOAT {
 			c = b.copy(c)
 			c._type = FLOAT
-			c.pointData = make([]int8,len(a.pointData))
+			c.pointData = make([]int8, len(a.pointData))
 		} else if c._type == FLOAT {
 			a = b.copy(a)
 			a._type = FLOAT
-			a.pointData = make([]int8,len(c.pointData))
+			a.pointData = make([]int8, len(c.pointData))
 		}
-		return hit(sliceValueEQ(a.pointData,c.pointData),false,sliceValueGT(a.pointData,c.pointData)).(bool)
+		return hit(sliceValueEQ(a.pointData, c.pointData), false, sliceValueGT(a.pointData, c.pointData)).(bool)
 	}
 	return false
 }
 
 // LT 小于
-func (b *BigNum) LT(a,c *BigNum) bool {
+func (b *BigNum) LT(a, c *BigNum) bool {
 	// 防止等于
-	if b.EQ(a,c) {
+	if b.EQ(a, c) {
 		return false
 	}
-	return !b.GT(a,c)
+	return !b.GT(a, c)
 }
 
 // GE 大于等于
-func (b *BigNum) GE(a,c *BigNum) bool {
-	return b.GT(a,c) || b.EQ(a,c)
+func (b *BigNum) GE(a, c *BigNum) bool {
+	return b.GT(a, c) || b.EQ(a, c)
 }
 
 // LE 小于等于
-func (b *BigNum) LE(a,c *BigNum) bool {
-	return b.LT(a,c) || b.EQ(a,c)
+func (b *BigNum) LE(a, c *BigNum) bool {
+	return b.LT(a, c) || b.EQ(a, c)
 }
 
 // 数字存储的真实长度
@@ -422,7 +422,7 @@ func (b *BigNum) len() int {
 	if b._type == INTEGER {
 		return len(b.data) - 1
 	} else if b._type == FLOAT {
-		return len(b.data) - 1	+ len(b.pointData)
+		return len(b.data) - 1 + len(b.pointData)
 	} else {
 		return 0
 	}
@@ -438,18 +438,18 @@ func (b *BigNum) Abs() *BigNum {
 // 拷贝
 func (b *BigNum) copy(p *BigNum) *BigNum {
 	return &BigNum{
-		_type:     p._type,
+		_type: p._type,
 		data: func() []int8 {
-			dst := make([]int8,len(p.data))
-			copy(dst,p.data)
+			dst := make([]int8, len(p.data))
+			copy(dst, p.data)
 			return dst
 		}(),
 		pointData: func() []int8 {
 			if p.pointData == nil {
 				return nil
 			}
-			dst := make([]int8,len(p.pointData))
-			copy(dst,p.pointData)
+			dst := make([]int8, len(p.pointData))
+			copy(dst, p.pointData)
 			return dst
 		}(),
 	}
@@ -472,7 +472,7 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 	if a.data[0] == int8(PN) && c.data[0] == int8(NN) {
 		c2 := b.copy(c)
 		c2.data[0] = int8(PN)
-		return b.Sub(a,c2)
+		return b.Sub(a, c2)
 	} else if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
 		// 负负相加
 		a2 := b.copy(a)
@@ -480,18 +480,18 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 		// 调整符号位
 		a2.data[0] = int8(PN)
 		c2.data[0] = int8(PN)
-		nResult := b.Add(a2,c2)
+		nResult := b.Add(a2, c2)
 		nResult.data[0] = int8(NN)
 		return nResult
 	} else if a.data[0] == int8(NN) && c.data[0] == int8(PN) {
 		// 负正相加
 		a2 := b.copy(a)
 		a2.data[0] = int8(PN)
-		return b.Sub(c,a2)
+		return b.Sub(c, a2)
 	}
 	// 不同的类型采用不同的策略
 	// 正正相加
-	loop:
+loop:
 	if a._type == c._type && a._type == INTEGER {
 		// 找出最大的数对其计算
 		lenMax := hit(len(a.data) > len(c.data), len(a.data), len(c.data)).(int)
@@ -504,13 +504,13 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 			minBigNum = c
 		}
 		// 符号位不计算
-		for i := 0; i < len(minBigNum.data) - 1; i++ {
+		for i := 0; i < len(minBigNum.data)-1; i++ {
 			var r int8
 			if !tmpFlowI.IsEmpty() {
 				flow := tmpFlowI.Pop().(int)
-				r = minBigNum.data[len(minBigNum.data) - 1 - i] + maxBigNum.data[len(maxBigNum.data) - 1 - i] + int8(flow)
+				r = minBigNum.data[len(minBigNum.data)-1-i] + maxBigNum.data[len(maxBigNum.data)-1-i] + int8(flow)
 			} else {
-				r = minBigNum.data[len(minBigNum.data) - 1 - i] + maxBigNum.data[len(maxBigNum.data) - 1 - i]
+				r = minBigNum.data[len(minBigNum.data)-1-i] + maxBigNum.data[len(maxBigNum.data)-1-i]
 			}
 			if r >= 10 {
 				tmpFlowI.Push(int(r / 10))
@@ -539,23 +539,23 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 		integerResult.Push(PN)
 	} else if a._type == c._type && a._type == FLOAT {
 		// 找出最大长度的小数，方便后续验证溢出
-		fLenMax := hit(len(a.pointData) > len(c.pointData),a,c).(*BigNum)
-		fLenMin := hit(len(a.pointData) > len(c.pointData),c,a).(*BigNum)
+		fLenMax := hit(len(a.pointData) > len(c.pointData), a, c).(*BigNum)
+		fLenMin := hit(len(a.pointData) > len(c.pointData), c, a).(*BigNum)
 		// 小数对齐计算
 		if l := len(fLenMax.pointData) - len(fLenMin.pointData); l > 0 {
 			for i := 0; i < l; i++ {
-				fLenMin.pointData = append(fLenMin.pointData,0)
+				fLenMin.pointData = append(fLenMin.pointData, 0)
 			}
 		}
-		var str1,str2 []byte
-		for _,v := range fLenMax.pointData {
-			str1 = append(str1,reverseTable[v])
+		var str1, str2 []byte
+		for _, v := range fLenMax.pointData {
+			str1 = append(str1, reverseTable[v])
 		}
-		for _,v := range fLenMin.pointData {
-			str2 = append(str2,reverseTable[v])
+		for _, v := range fLenMin.pointData {
+			str2 = append(str2, reverseTable[v])
 		}
-		var x,y BigNum
-		fElement := b.Add(x.FromString(string(str1)),y.FromString(string(str2)))
+		var x, y BigNum
+		fElement := b.Add(x.FromString(string(str1)), y.FromString(string(str2)))
 		// 长度大于原来最长的数则代表有溢出
 		// 忽略符号位
 		fResult := fElement.data[1:]
@@ -570,11 +570,11 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 			pointResult.Push(int(fResult[i]))
 		}
 		// 计算整数
-		d1 := make([]int8,len(a.data))
-		d2 := make([]int8,len(c.data))
-		copy(d1,a.data)
-		copy(d2,c.data)
-		iResult := b.Add(&BigNum{_type: INTEGER,data: d1},&BigNum{_type: INTEGER,data: d2}).data
+		d1 := make([]int8, len(a.data))
+		d2 := make([]int8, len(c.data))
+		copy(d1, a.data)
+		copy(d2, c.data)
+		iResult := b.Add(&BigNum{_type: INTEGER, data: d1}, &BigNum{_type: INTEGER, data: d2}).data
 		// 将得到的整数结果压入栈
 		for i := len(iResult) - 1; i >= 0; i-- {
 			integerResult.Push(int(iResult[i]))
@@ -587,14 +587,14 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 			defer func(bn *BigNum) {
 				bn._type = INTEGER
 			}(c)
-			c.pointData = append(c.pointData,0)
+			c.pointData = append(c.pointData, 0)
 		} else if c._type == FLOAT {
 			// 临时修改，以满足跳转条件
 			a._type = FLOAT
 			defer func(bn *BigNum) {
 				bn._type = INTEGER
 			}(a)
-			a.pointData = append(a.pointData,0)
+			a.pointData = append(a.pointData, 0)
 		}
 		// 将小数对其并运算
 		// 设置好结果并运算
@@ -624,7 +624,7 @@ func (b *BigNum) Add(a, c *BigNum) *BigNum {
 }
 
 // Sub 减法
-func (b *BigNum) Sub(a,c *BigNum) *BigNum {
+func (b *BigNum) Sub(a, c *BigNum) *BigNum {
 	// 判断符号位，以便优化
 	// 负正相减，变换符号位
 	if a.data[0] != c.data[0] && a.data[0] == int8(NN) {
@@ -632,7 +632,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 		defer func(p *BigNum) {
 			p.data[0] = int8(NN)
 		}(a)
-		tmp := b.Add(a,c)
+		tmp := b.Add(a, c)
 		tmp.data[0] = int8(NN)
 		return tmp
 	} else if a.data[0] != c.data[0] && a.data[0] == int8(PN) {
@@ -641,12 +641,12 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 		defer func(p *BigNum) {
 			p.data[0] = int8(NN)
 		}(c)
-		return b.Add(a,c)
+		return b.Add(a, c)
 	} else if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
 		// 负负相减
 		c2 := b.copy(c)
 		c2.data[0] = int8(PN)
-		return b.Add(a,c2)
+		return b.Add(a, c2)
 	}
 	// 存储整数计算结果的栈
 	integerResult := alg.NewStack()
@@ -655,7 +655,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 	// 正整数减法
 	if a._type == c._type && a._type == INTEGER && a.data[0] == c.data[0] && a.data[0] == int8(PN) {
 		// 找出最大的数
-		max := b.Max(a,c)
+		max := b.Max(a, c)
 		var min *BigNum
 		if max == c {
 			min = a
@@ -663,14 +663,14 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			min = c
 		}
 		minuend := b.copy(max)
-		for i := 1; i < len(min.data); i++{
+		for i := 1; i < len(min.data); i++ {
 			// 小于被减数则借位
-			if r := minuend.data[len(minuend.data) - i]; r < min.data[len(min.data) - i] {
-				minuend.data[len(minuend.data) - (i+1)] -= 1
+			if r := minuend.data[len(minuend.data)-i]; r < min.data[len(min.data)-i] {
+				minuend.data[len(minuend.data)-(i+1)] -= 1
 				r += 10
-				integerResult.Push(int(r - min.data[len(min.data) - i]))
-			}  else {
-				integerResult.Push(int(r - min.data[len(min.data) - i]))
+				integerResult.Push(int(r - min.data[len(min.data)-i]))
+			} else {
+				integerResult.Push(int(r - min.data[len(min.data)-i]))
 			}
 		}
 		// 长度不相等则补上剩余的数字
@@ -678,7 +678,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 		// 扫描到小于0的数字要借位
 		for i := len(minuend.data) - len(min.data); i > 0; i-- {
 			if r := int(minuend.data[i]); r < 0 {
-				minuend.data[i - 1] -= 1
+				minuend.data[i-1] -= 1
 				integerResult.Push(r + 10)
 			} else {
 				integerResult.Push(r)
@@ -689,7 +689,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			integerResult.Pop()
 		}
 		// 根据被减数和减数大小关系补充符号位
-		if min ==  a {
+		if min == a {
 			integerResult.Push(NN)
 		} else {
 			integerResult.Push(PN)
@@ -704,25 +704,25 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			运算之后的整数 + 运算之后的小数
 		*/
 		// 找出最大的数，以便可以借位
-		max := b.Max(a,c)
-		min := b.Min(a,c)
+		max := b.Max(a, c)
+		min := b.Min(a, c)
 		// 被减数
 		minuend := b.copy(max)
 		sub := min
 		// 小数要对齐长度
 		if len(minuend.pointData) > len(sub.pointData) {
-			sub.pointData = append(sub.pointData,make([]int8,len(minuend.pointData) - len(sub.pointData))...)
+			sub.pointData = append(sub.pointData, make([]int8, len(minuend.pointData)-len(sub.pointData))...)
 		} else if len(minuend.pointData) < len(sub.pointData) {
-			minuend.pointData = append(minuend.pointData,make([]int8,len(sub.pointData) - len(minuend.pointData))...)
+			minuend.pointData = append(minuend.pointData, make([]int8, len(sub.pointData)-len(minuend.pointData))...)
 		}
 		// 遍历相减
-		for i := len(minuend.pointData) - 1; i >= 0 ; i-- {
+		for i := len(minuend.pointData) - 1; i >= 0; i-- {
 			if r := minuend.pointData[i] - sub.pointData[i]; r < 0 {
 				// 借位,小数位没位置则向整数位借
-				if i - 1 < 0 {
-					minuend.data[len(minuend.data) - 1] -= 1
+				if i-1 < 0 {
+					minuend.data[len(minuend.data)-1] -= 1
 				} else {
-					minuend.pointData[i - 1] -= 1
+					minuend.pointData[i-1] -= 1
 				}
 				pointResult.Push(int(r + 10))
 			} else {
@@ -730,7 +730,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			}
 		}
 		// 整数相减
-		iResult := b.Sub(&BigNum{_type: INTEGER,data: minuend.data},&BigNum{_type: INTEGER,data: min.data})
+		iResult := b.Sub(&BigNum{_type: INTEGER, data: minuend.data}, &BigNum{_type: INTEGER, data: min.data})
 		// 根据最小数字确认符号位
 		if a == min {
 			iResult.data[0] = int8(NN)
@@ -738,7 +738,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 			iResult.data[0] = int8(PN)
 		}
 		// 将结果压栈
-		for i := len(iResult.data) - 1 ; i >=0 ; i-- {
+		for i := len(iResult.data) - 1; i >= 0; i-- {
 			integerResult.Push(int(iResult.data[i]))
 		}
 	} else if a._type != c._type {
@@ -749,12 +749,12 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 		c2 := b.copy(c)
 		if a2._type == FLOAT {
 			c2._type = FLOAT
-			c2.pointData = make([]int8,len(a2.pointData))
+			c2.pointData = make([]int8, len(a2.pointData))
 		} else if c._type == FLOAT {
 			a2._type = FLOAT
-			a2.pointData = make([]int8,len(c2.pointData))
+			a2.pointData = make([]int8, len(c2.pointData))
 		}
-		return b.Sub(a2,c2)
+		return b.Sub(a2, c2)
 	}
 	// 序列化
 	// 拼接成BigNum类型
@@ -766,10 +766,10 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 		element._type = FLOAT
 	}
 	for !integerResult.IsEmpty() {
-		element.data = append(element.data,int8(integerResult.Pop().(int)))
+		element.data = append(element.data, int8(integerResult.Pop().(int)))
 	}
 	for !pointResult.IsEmpty() {
-		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+		element.pointData = append(element.pointData, int8(pointResult.Pop().(int)))
 	}
 	return element
 }
@@ -778,7 +778,7 @@ func (b *BigNum) Sub(a,c *BigNum) *BigNum {
 /*
 	单乘多 -> 多乘多 -> 小数多乘多
 */
-func (b *BigNum) Ride(a,c *BigNum) *BigNum {
+func (b *BigNum) Ride(a, c *BigNum) *BigNum {
 	// 存储整数计算结果的栈
 	integerResult := alg.NewStack()
 	// 存储小数计算结果的栈
@@ -789,25 +789,25 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 		var multiplier int8
 		if a.len() == 1 {
 			multiplicand = c
-			multiplier = a.data[len(a.data) - 1]
+			multiplier = a.data[len(a.data)-1]
 		} else if c.len() == 1 {
-			multiplier = c.data[len(c.data) - 1]
+			multiplier = c.data[len(c.data)-1]
 			multiplicand = a
 		}
 		// 结果集,用于竖式对齐
 		resultSet := alg.NewStack()
-		for i := len(multiplicand.data) - 1 ; i > 0 ; i-- {
+		for i := len(multiplicand.data) - 1; i > 0; i-- {
 			// 相乘
 			r := multiplicand.data[i] * multiplier
 			var resultData []int8
 			if r > 9 {
-				resultData = []int8{r / 10,r % 10}
+				resultData = []int8{r / 10, r % 10}
 			} else {
 				resultData = []int8{r}
 			}
 			// 补零
-			resultData = append(resultData,make([]int8,multiplicand.len() - i)...)
-			resultSet.Push(&BigNum{_type: INTEGER,data: append([]int8{int8(PN)},resultData...)})
+			resultData = append(resultData, make([]int8, multiplicand.len()-i)...)
+			resultSet.Push(&BigNum{_type: INTEGER, data: append([]int8{int8(PN)}, resultData...)})
 		}
 		// 相加并把结果压栈
 		// 取出来并逐个相加
@@ -818,7 +818,7 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 		}
 		for !resultSet.IsEmpty() {
 			r := resultSet.Pop().(*BigNum)
-			addResult = b.Add(addResult,r)
+			addResult = b.Add(addResult, r)
 		}
 		// 将最后的结果压栈
 		// 忽略符号位
@@ -827,16 +827,16 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 		}
 	} else if a._type == c._type && a._type == INTEGER && a.len() > 1 && c.len() > 1 {
 		// 整数多乘多
-		multiplicand := b.Max(a,c)
-		multiplier := b.Min(a,c)
+		multiplicand := b.Max(a, c)
+		multiplier := b.Min(a, c)
 		// 结果集
 		resultSet := alg.NewStack()
 		// 逐个相乘并补上零之后放入结果集
 		// 符号位不计算
-		for i := len(multiplier.data) - 1 ; i > 0; i-- {
-			r := b.Ride(&BigNum{_type: INTEGER,data: []int8{int8(PN),multiplier.data[i]}},multiplicand)
+		for i := len(multiplier.data) - 1; i > 0; i-- {
+			r := b.Ride(&BigNum{_type: INTEGER, data: []int8{int8(PN), multiplier.data[i]}}, multiplicand)
 			// 补零
-			r.data = append(r.data,make([]int8,multiplier.len() - i)...)
+			r.data = append(r.data, make([]int8, multiplier.len()-i)...)
 			// 压栈
 			resultSet.Push(r)
 		}
@@ -848,7 +848,7 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 		}
 		for !resultSet.IsEmpty() {
 			r := resultSet.Pop().(*BigNum)
-			addResult = b.Add(addResult,r)
+			addResult = b.Add(addResult, r)
 		}
 		// 将最后的结果压栈
 		// 忽略符号位
@@ -862,11 +862,11 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 		c2 := b.copy(c)
 		// 记录化整的偏移量
 		offset := len(a2.pointData) + len(c2.pointData)
-		result := b.Ride(&BigNum{_type: INTEGER,data: append(a2.data,a2.pointData...)},
-		&BigNum{_type: INTEGER,data: append(c2.data,c2.pointData...)})
+		result := b.Ride(&BigNum{_type: INTEGER, data: append(a2.data, a2.pointData...)},
+			&BigNum{_type: INTEGER, data: append(c2.data, c2.pointData...)})
 		// 根据偏移量恢复小数
 		// 将小数结果压栈
-		for i := len(result.data) - 1; len(result.data) - offset <= i ; i-- {
+		for i := len(result.data) - 1; len(result.data)-offset <= i; i-- {
 			pointResult.Push(int(result.data[i]))
 		}
 		// 将整数结果压栈
@@ -881,12 +881,12 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 			c2 := b.copy(c)
 			c2._type = FLOAT
 			c2.pointData = []int8{0}
-			return b.Ride(a,c2)
+			return b.Ride(a, c2)
 		} else if c._type == FLOAT {
 			a2 := b.copy(a)
 			a2._type = FLOAT
 			a2.pointData = []int8{0}
-			return b.Ride(a2,c)
+			return b.Ride(a2, c)
 		}
 	}
 	// 序列化
@@ -901,17 +901,17 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 	// 负数的符号位确定比较简单，所以可以在后面确定
 	// 负负为正|有一负均为负|正正为正
 	if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
-		element.data = append(element.data,int8(PN))
-	} else if a.data[0] == c.data[0] && a.data[0] == int8(PN){
-		element.data = append(element.data,int8(PN))
-	}else if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
-		element.data = append(element.data,int8(NN))
+		element.data = append(element.data, int8(PN))
+	} else if a.data[0] == c.data[0] && a.data[0] == int8(PN) {
+		element.data = append(element.data, int8(PN))
+	} else if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
+		element.data = append(element.data, int8(NN))
 	}
 	for !integerResult.IsEmpty() {
-		element.data = append(element.data,int8(integerResult.Pop().(int)))
+		element.data = append(element.data, int8(integerResult.Pop().(int)))
 	}
 	for !pointResult.IsEmpty() {
-		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+		element.pointData = append(element.pointData, int8(pointResult.Pop().(int)))
 	}
 	return element
 }
@@ -920,17 +920,19 @@ func (b *BigNum) Ride(a,c *BigNum) *BigNum {
 /*
 	整数除法 -> 小数除法
 */
-func (b *BigNum) Except(a,c *BigNum) *BigNum {
+func (b *BigNum) Except(a, c *BigNum) *BigNum {
 	// 处理负数，有任一数为负数则结果为负数
 	// 负负为正
 	if a.data[0] == c.data[0] && a.data[0] == int8(NN) {
-		a2,c2 := b.copy(a),b.copy(c)
-		a2.data[0] = int8(PN);c2.data[0] = int8(PN)
-		return b.Except(a2,c2)
+		a2, c2 := b.copy(a), b.copy(c)
+		a2.data[0] = int8(PN)
+		c2.data[0] = int8(PN)
+		return b.Except(a2, c2)
 	} else if a.data[0] == int8(NN) || c.data[0] == int8(NN) {
-		a2,c2 := b.copy(a),b.copy(c)
-		a2.data[0] = int8(PN);c2.data[0] = int8(PN)
-		tmp := b.Except(a2,c2)
+		a2, c2 := b.copy(a), b.copy(c)
+		a2.data[0] = int8(PN)
+		c2.data[0] = int8(PN)
+		tmp := b.Except(a2, c2)
 		tmp.data[0] = int8(NN)
 		return tmp
 	}
@@ -941,8 +943,8 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 
 	if a._type == c._type && a._type == INTEGER {
 		// 临时整数结果存储
-		tmpIntResult := make([]int,0)
-		tmpFloatResult := make([]int,0)
+		tmpIntResult := make([]int, 0)
+		tmpFloatResult := make([]int, 0)
 		// 创建哨兵条件
 		// 找出一个比被除数要大的数
 		// 被除数比除数大则借位
@@ -959,24 +961,24 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		appendData := func(d int8) {
 			// 偏移量大于原始的被除数则填入小数结果集
 			if offset > a.len() {
-				tmpFloatResult = append(tmpFloatResult,int(d))
+				tmpFloatResult = append(tmpFloatResult, int(d))
 			} else {
-				tmpIntResult = append(tmpIntResult,int(d))
+				tmpIntResult = append(tmpIntResult, int(d))
 			}
 		}
 		// 初始除数大于被除数的情况
-		if b.GT(divisor,dividend) {
+		if b.GT(divisor, dividend) {
 			// 因为整数位要补零，所以小数位的补零数量-1
-			tmpFloatResult = append(tmpFloatResult,make([]int,divisor.len() - dividend.len() - 1)...)
-			tmpIntResult = append(tmpIntResult,0)
+			tmpFloatResult = append(tmpFloatResult, make([]int, divisor.len()-dividend.len()-1)...)
+			tmpIntResult = append(tmpIntResult, 0)
 			offset += divisor.len() - dividend.len()
-			dividend.data = append(dividend.data,make([]int8,divisor.len() - dividend.len())...)
+			dividend.data = append(dividend.data, make([]int8, divisor.len()-dividend.len())...)
 		}
 		// 记录截取除数的指针
 		divPtr := len(divisor.data)
-		for len(tmpIntResult) + len(tmpFloatResult) <= DivisionAccuracy {
+		for len(tmpIntResult)+len(tmpFloatResult) <= DivisionAccuracy {
 			// 运算中被除数小于除数的情况
-			if b.LT(dividend,divisor) && !b.EQ(dividend,divisor) {
+			if b.LT(dividend, divisor) && !b.EQ(dividend, divisor) {
 				// 被除数首位小于等于除数则还需要补一位
 				flow := len(divisor.data) - len(dividend.data)
 				if dividend.data[1] <= divisor.data[1] {
@@ -985,45 +987,45 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 				offset++
 				// 借位大于1的话则补上对应的零
 				if flow > 1 {
-					tmpFloatResult = append(tmpFloatResult,make([]int,flow - 1)...)
+					tmpFloatResult = append(tmpFloatResult, make([]int, flow-1)...)
 				}
 				divPtr = len(divisor.data)
 				// 匹配点的向量减去借位的位数
 				pointIV -= flow
-				dividend.data = append(dividend.data,make([]int8,flow)...)
+				dividend.data = append(dividend.data, make([]int8, flow)...)
 			}
 			// 截取与被除数相等的长度进行比较,包括符号位
-			tmp := BigNum{_type: INTEGER,data: dividend.data[:divPtr]}
-			if !b.GT(&tmp,divisor) && b.NE(&tmp,divisor) {
+			tmp := BigNum{_type: INTEGER, data: dividend.data[:divPtr]}
+			if !b.GT(&tmp, divisor) && b.NE(&tmp, divisor) {
 				divPtr++
 				continue
 			}
 			// 添加实际长度的匹配点，忽略符号位
-			point = append(point,point[len(point) - 1] + divPtr - len(divisor.data))
+			point = append(point, point[len(point)-1]+divPtr-len(divisor.data))
 			// 预测除数与被除数相差多少倍
 			// 截取被除数4位于除数3位，利用语言原生提供的除法预测
-			for i := 2 ; i <= 10 ; i++ {
-				if r := b.Ride(divisor,&BigNum{_type: INTEGER,data: []int8{int8(PN), int8(i)}}); b.GT(r,&tmp) {
+			for i := 2; i <= 10; i++ {
+				if r := b.Ride(divisor, &BigNum{_type: INTEGER, data: []int8{int8(PN), int8(i)}}); b.GT(r, &tmp) {
 					// 比较两次的匹配点
 					// 匹配点有间隔的数则补上缺失的零
 					// 对齐匹配点
-					if p,j := point[len(point) - 1] + pointIV,point[len(point) - 2]; p - j >= 2 {
-						for j := p - j - 1 ; j > 0; j-- {
+					if p, j := point[len(point)-1]+pointIV, point[len(point)-2]; p-j >= 2 {
+						for j := p - j - 1; j > 0; j-- {
 							appendData(0)
 						}
-						point[len(point) - 1] = p
+						point[len(point)-1] = p
 						pointIV = 0
 					}
 					appendData(int8(i - 1))
-					r = b.Sub(r,divisor)
+					r = b.Sub(r, divisor)
 					// 将r补上零并减去
 					// 结果是整数位时才需要补零
 					if offset == a.len() {
 						nativeLen = len(dividend.data) - len(r.data)
-						r.data = append(r.data,make([]int8,len(dividend.data) - len(r.data))...)
+						r.data = append(r.data, make([]int8, len(dividend.data)-len(r.data))...)
 					}
 					oldDividendLen := len(dividend.data)
-					dividend = b.Sub(dividend,r)
+					dividend = b.Sub(dividend, r)
 					// 与上一次的结果相减之后的结果的长度比上一次小于2的话则添加匹配点向量
 					if r := oldDividendLen - len(dividend.data); r > 1 {
 						pointIV += r - 1
@@ -1034,7 +1036,7 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 			// TODO:优化补零算法
 			// 如果减法之后的结果为0，则直接输出
 			// 需要补上剩余的零，补零数量 = dividend.zeroLen - divisor.zeroLen
-			if b.EQ(dividend,&BigNum{_type: INTEGER,data: []int8{int8(PN),0}}) {
+			if b.EQ(dividend, &BigNum{_type: INTEGER, data: []int8{int8(PN), 0}}) {
 				for i := nativeLen; i > 0; i-- {
 					appendData(0)
 				}
@@ -1043,10 +1045,10 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 			divPtr = len(divisor.data)
 		}
 		// 将结果去除并打上符号位
-		for i := len(tmpIntResult) - 1 ; i >= 0; i-- {
+		for i := len(tmpIntResult) - 1; i >= 0; i-- {
 			integerResult.Push(tmpIntResult[i])
 		}
-		for i := len(tmpFloatResult) - 1 ; i >= 0; i-- {
+		for i := len(tmpFloatResult) - 1; i >= 0; i-- {
 			pointResult.Push(tmpFloatResult[i])
 		}
 		// 负数不在此处理
@@ -1056,25 +1058,25 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		a2 := b.copy(a)
 		c2 := b.copy(c)
 		// 确定偏移量
-		offset := hit(len(a2.pointData) > len(c2.pointData),len(a2.pointData),len(c2.pointData)).(int)
+		offset := hit(len(a2.pointData) > len(c2.pointData), len(a2.pointData), len(c2.pointData)).(int)
 		// 去除左边的无意义零，保证计算结果的准确性
-		a2.data = sliceDeleteLeftZero(append(a2.data,append(a2.pointData,make([]int8,offset - len(a2.pointData))...)...))
-		c2.data = sliceDeleteLeftZero(append(c2.data,append(c2.pointData,make([]int8,offset - len(c2.pointData))...)...))
+		a2.data = sliceDeleteLeftZero(append(a2.data, append(a2.pointData, make([]int8, offset-len(a2.pointData))...)...))
+		c2.data = sliceDeleteLeftZero(append(c2.data, append(c2.pointData, make([]int8, offset-len(c2.pointData))...)...))
 		a2._type = INTEGER
 		c2._type = INTEGER
 		// 清空pointData
 		a2.pointData = nil
 		c2.pointData = nil
-		return b.Except(a2,c2)
+		return b.Except(a2, c2)
 	} else if a._type != c._type {
 		// 将不为小数的一方装换为小数进行运算
-		integer := b.copy(hit(a._type == INTEGER,a,c).(*BigNum))
-		float := b.copy(hit(a._type == FLOAT,a,c).(*BigNum))
+		integer := b.copy(hit(a._type == INTEGER, a, c).(*BigNum))
+		float := b.copy(hit(a._type == FLOAT, a, c).(*BigNum))
 		integer._type = FLOAT
-		integer.pointData = append(integer.pointData,0)
-		dividend := hit(b.EQ(integer,a),integer,float).(*BigNum)
-		divisor := hit(b.EQ(float,c),float,integer).(*BigNum)
-		return b.Except(dividend,divisor)
+		integer.pointData = append(integer.pointData, 0)
+		dividend := hit(b.EQ(integer, a), integer, float).(*BigNum)
+		divisor := hit(b.EQ(float, c), float, integer).(*BigNum)
+		return b.Except(dividend, divisor)
 	}
 
 	// 序列化
@@ -1087,10 +1089,10 @@ func (b *BigNum) Except(a,c *BigNum) *BigNum {
 		element._type = FLOAT
 	}
 	for !integerResult.IsEmpty() {
-		element.data = append(element.data,int8(integerResult.Pop().(int)))
+		element.data = append(element.data, int8(integerResult.Pop().(int)))
 	}
 	for !pointResult.IsEmpty() {
-		element.pointData = append(element.pointData,int8(pointResult.Pop().(int)))
+		element.pointData = append(element.pointData, int8(pointResult.Pop().(int)))
 	}
 	return element
 }

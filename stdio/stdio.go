@@ -25,10 +25,9 @@ func ReadStdIn() error {
 	}
 }
 
-
 func WriteStdOut() error {
-	tmp := make([]byte,0)
-	_,err := base.StdOut.Read(tmp)
+	tmp := make([]byte, 0)
+	_, err := base.StdOut.Read(tmp)
 	if err != nil {
 		return err
 	}
