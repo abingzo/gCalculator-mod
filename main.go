@@ -2,15 +2,12 @@ package main
 
 import (
 	"gCalculator-mod/base"
-	"gCalculator-mod/bus"
 	"gCalculator-mod/stdio"
 	"gCalculator-mod/task"
 	"os"
 )
 
 func main() {
-	base.StdOut = bus.NewStdOut()
-	base.StdIn = bus.NewStdIn()
 	base.OsStdOut = os.Stdout
 	base.OsStdIn = os.Stdin
 	// 错误恢复
@@ -23,13 +20,12 @@ func main() {
 	// 检测输入和输出
 	for {
 		// 阻塞检测输入
-		err := stdio.ReadStdIn()
+		bytes, err := stdio.ReadStdIn()
 		if err != nil {
 			panic(err)
 		}
 		// 执行计算任务
-		_ = task.NewCalculationTask()
 		// 检测输出
-		_ = stdio.WriteStdOut()
+		_ = stdio.WriteStdOut([]byte(task.NewCalculationTask(string(bytes))))
 	}
 }

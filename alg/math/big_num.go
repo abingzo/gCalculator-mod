@@ -8,7 +8,7 @@ import (
 
 const (
 	// FLOAT 小数
-	FLOAT numType = iota
+	FLOAT NumType = iota
 	// INTEGER 整数
 	INTEGER
 	// PN 正数
@@ -53,7 +53,7 @@ var reverseTable = map[int8]byte{
 // BigNum 可伸缩大数字类型
 type BigNum struct {
 	// 数字的类型
-	_type numType
+	_type NumType
 	// 存储底层数据的类型
 	// S|Integer|Float
 	// 符号位|整数位|小数位
@@ -68,6 +68,32 @@ func (b *BigNum) Reset() {
 	b._type = 0
 	b.data = nil
 	b.pointData = nil
+}
+
+// Type 返回对应的类型
+func (b *BigNum) Type() NumType {
+	return b._type
+}
+
+/*
+	手动伸缩类型
+*/
+// 伸缩为Int意味将抛弃所有的小数位
+func (b *BigNum) ToInteger() *BigNum {
+	b._type = INTEGER
+	b.pointData = nil
+	return b
+}
+
+// ToFloat 伸缩为Float意味将当前数设置为值相等的小数
+// 本身为FLOAT则返回本身
+func (b *BigNum) ToFloat() *BigNum {
+	if b._type == FLOAT {
+		return b
+	}
+	b._type = FLOAT
+	b.pointData = []int8{0}
+	return b
 }
 
 // 科学计数法的格式化
@@ -139,12 +165,14 @@ func (b *BigNum) FromString(s string) *BigNum {
 // 格式化为字符串
 func (b *BigNum) String() string {
 	if b._type == FLOAT {
+		b.data = sliceDeleteLeftZero(b.data)
+		b.pointData = sliceDeleteRightZero(b.pointData)
 		return b.floatString()
 	} else if b._type == INTEGER {
+		b.data = sliceDeleteLeftZero(b.data)
 		return b.integerString()
-	} else {
-		return ""
 	}
+	return ""
 }
 
 // 整数格式化
@@ -158,7 +186,12 @@ func (b *BigNum) integerString() string {
 }
 
 // 小数格式化
+// 小数的值为零则自动伸缩为整数类型,如:2.00 -> 2
 func (b *BigNum) floatString() string {
+	if b.EQ(b,&BigNum{_type: INTEGER,data: append(b.data)}) {
+		b.ToInteger()
+		return b.integerString()
+	}
 	lens := len(b.data) + len(b.pointData) + 1
 	result := make([]byte, lens)
 	for k, v := range b.data {
@@ -219,8 +252,12 @@ func isFloat(a, c []int8) bool {
 // 忽略符号位
 // 值相等的前提下，删除无意义的0值
 // 去除左边的零
+// 只有一个零的时候不去除
 func sliceDeleteLeftZero(a []int8) []int8 {
 	aDst := make([]int8, 0, len(a))
+	if (len(a) == 2 || len(a) == 1) && a[len(a)-1] == 0{
+		return append(aDst,a...)
+	}
 	// 有符号位的情况
 	ptr := 0
 	if a[0] == int8(PN) || a[0] == int8(NN) {
@@ -253,6 +290,10 @@ func sliceDeleteRightZero(a []int8) []int8 {
 		} else if r == 0 {
 			ptr--
 		}
+	}
+	// 保证至少留下一个零
+	if ptr == 0 && len(a) > 0 {
+		ptr++
 	}
 	aDst = append(aDst, a[:ptr]...)
 	return aDst
@@ -952,9 +993,9 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 		divisor := b.copy(c)
 		offset := dividend.len()
 		// 记录匹配点，用于补零
-		point := []int{0}
+		point := []int{1}
 		// 匹配点的向量,从第一个匹配的数开始
-		pointIV := 1
+		pointIV := 0
 		// 从左向右除法未补零的原生长度
 		nativeLen := 0
 		// 一些函数
@@ -967,12 +1008,29 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 			}
 		}
 		// 初始除数大于被除数的情况
-		if b.GT(divisor, dividend) {
-			// 因为整数位要补零，所以小数位的补零数量-1
-			tmpFloatResult = append(tmpFloatResult, make([]int, divisor.len()-dividend.len()-1)...)
-			tmpIntResult = append(tmpIntResult, 0)
-			offset += divisor.len() - dividend.len()
-			dividend.data = append(dividend.data, make([]int8, divisor.len()-dividend.len())...)
+		for i:= 0;b.GT(divisor, dividend);i++ {
+			//if len(tmpIntResult) == 0 {
+			//	offset++
+			//	pointIV--
+			//	tmpIntResult = append(tmpIntResult, 0)
+			//}
+			//if r := divisor.len() - dividend.len() - 1 + i; r > 0 {
+			//	offset += r
+			//	pointIV -= r
+			//	tmpFloatResult = append(tmpFloatResult,make([]int,r)...)
+			//}
+			dividend.data = append(dividend.data, make([]int8, divisor.len()-dividend.len()+i)...)
+		}
+		// 根据补零之后的被除数和原来的被除数比较得出补零结果
+		for i := dividend.len() - a.len(); i > 0; i-- {
+			if len(tmpIntResult) == 0 {
+				tmpIntResult = append(tmpIntResult,0)
+				offset++
+				pointIV--
+				continue
+			}
+			tmpFloatResult = append(tmpFloatResult,make([]int,i)...)
+			break
 		}
 		// 记录截取除数的指针
 		divPtr := len(divisor.data)
@@ -998,10 +1056,14 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 			tmp := BigNum{_type: INTEGER, data: dividend.data[:divPtr]}
 			if !b.GT(&tmp, divisor) && b.NE(&tmp, divisor) {
 				divPtr++
+				pointIV++
 				continue
 			}
 			// 添加实际长度的匹配点，忽略符号位
-			point = append(point, point[len(point)-1]+divPtr-len(divisor.data))
+			// 确定point
+			point = append(point,a.len() - dividend.len() + 1)
+			point[len(point)-1] += pointIV
+			pointIV = 0
 			// 预测除数与被除数相差多少倍
 			// 截取被除数4位于除数3位，利用语言原生提供的除法预测
 			for i := 2; i <= 10; i++ {
@@ -1009,12 +1071,10 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 					// 比较两次的匹配点
 					// 匹配点有间隔的数则补上缺失的零
 					// 对齐匹配点
-					if p, j := point[len(point)-1]+pointIV, point[len(point)-2]; p-j >= 2 {
+					if p, j := point[len(point)-1], point[len(point)-2]; p-j >= 2 {
 						for j := p - j - 1; j > 0; j-- {
 							appendData(0)
 						}
-						point[len(point)-1] = p
-						pointIV = 0
 					}
 					appendData(int8(i - 1))
 					r = b.Sub(r, divisor)
@@ -1022,14 +1082,13 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 					// 结果是整数位时才需要补零
 					if offset == a.len() {
 						nativeLen = len(dividend.data) - len(r.data)
-						r.data = append(r.data, make([]int8, len(dividend.data)-len(r.data))...)
+						if dividend.data[1] < r.data[1] {
+							r.data = append(r.data, make([]int8, len(dividend.data)-len(r.data)-1)...)
+						} else {
+							r.data = append(r.data, make([]int8, len(dividend.data)-len(r.data))...)
+						}
 					}
-					oldDividendLen := len(dividend.data)
 					dividend = b.Sub(dividend, r)
-					// 与上一次的结果相减之后的结果的长度比上一次小于2的话则添加匹配点向量
-					if r := oldDividendLen - len(dividend.data); r > 1 {
-						pointIV += r - 1
-					}
 					break
 				}
 			}
@@ -1095,4 +1154,10 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 		element.pointData = append(element.pointData, int8(pointResult.Pop().(int)))
 	}
 	return element
+}
+
+func (b *BigNum) Mod(a,c *BigNum) *BigNum {
+	result := b.Except(a,c)
+	dec := &BigNum{_type: FLOAT,data: []int8{result.data[0],0},pointData: append(result.pointData)}
+	return b.Ride(dec,c)
 }
