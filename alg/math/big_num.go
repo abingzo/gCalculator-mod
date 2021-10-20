@@ -993,6 +993,7 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 		divisor := b.copy(c)
 		offset := dividend.len()
 		// 记录匹配点，用于补零
+		// 初始为1，防止首位小于的情况
 		point := []int{1}
 		// 匹配点的向量,从第一个匹配的数开始
 		pointIV := 0
@@ -1005,6 +1006,22 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 				tmpFloatResult = append(tmpFloatResult, int(d))
 			} else {
 				tmpIntResult = append(tmpIntResult, int(d))
+			}
+		}
+		// 校验匹配点
+		checkPoint := func() {
+			// 比较两次的匹配点
+			// 匹配点有间隔的数则补上缺失的零
+			// 对齐匹配点
+			if p, j := point[len(point)-1], point[len(point)-2]; p-j >= 2 {
+				for j := p - j - 1; j > 0; j-- {
+					// 解决残留的问题，比如21/2导致的补零之后的结果为1.05
+					if offset - a.len() == 1 && point[len(point)-1] - point[len(point)-2] >= 2 {
+						tmpIntResult = append(tmpIntResult,0)
+					} else {
+						appendData(0)
+					}
+				}
 			}
 		}
 		// 初始除数大于被除数的情况
@@ -1026,12 +1043,12 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 			if len(tmpIntResult) == 0 {
 				tmpIntResult = append(tmpIntResult,0)
 				offset++
-				pointIV--
 				continue
 			}
 			tmpFloatResult = append(tmpFloatResult,make([]int,i)...)
 			break
 		}
+		cDividend := b.copy(dividend)
 		// 记录截取除数的指针
 		divPtr := len(divisor.data)
 		for len(tmpIntResult)+len(tmpFloatResult) <= DivisionAccuracy {
@@ -1049,7 +1066,7 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 				}
 				divPtr = len(divisor.data)
 				// 匹配点的向量减去借位的位数
-				pointIV -= flow
+				pointIV += flow
 				dividend.data = append(dividend.data, make([]int8, flow)...)
 			}
 			// 截取与被除数相等的长度进行比较,包括符号位
@@ -1061,21 +1078,14 @@ func (b *BigNum) Except(a, c *BigNum) *BigNum {
 			}
 			// 添加实际长度的匹配点，忽略符号位
 			// 确定point
-			point = append(point,a.len() - dividend.len() + 1)
+			point = append(point,cDividend.len() - dividend.len() + 1)
 			point[len(point)-1] += pointIV
 			pointIV = 0
 			// 预测除数与被除数相差多少倍
 			// 截取被除数4位于除数3位，利用语言原生提供的除法预测
 			for i := 2; i <= 10; i++ {
 				if r := b.Ride(divisor, &BigNum{_type: INTEGER, data: []int8{int8(PN), int8(i)}}); b.GT(r, &tmp) {
-					// 比较两次的匹配点
-					// 匹配点有间隔的数则补上缺失的零
-					// 对齐匹配点
-					if p, j := point[len(point)-1], point[len(point)-2]; p-j >= 2 {
-						for j := p - j - 1; j > 0; j-- {
-							appendData(0)
-						}
-					}
+					checkPoint()
 					appendData(int8(i - 1))
 					r = b.Sub(r, divisor)
 					// 将r补上零并减去
