@@ -41,6 +41,7 @@ func TestMathMode(t *testing.T) {
 	t.Log(fnd.Except("21","2"))
 	t.Log(fn.Sqrt(fnd.Power("2","67")))
 	t.Log(fn.Sqrt("64646.32765"))
+	t.Log(fnd.Power("2","1024"))
 }
 
 // 对封装的math模块的一些性能测试
